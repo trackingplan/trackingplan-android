@@ -28,6 +28,7 @@ publishing {
                 name = "Trackingplan Android Adapter"
                 description = "Gradle plugin for Trackingplan Android SDK"
                 url = "https://www.trackingplan.com"
+                packaging = "jar"
                 licenses {
                     license {
                         name = "MIT License"
@@ -43,9 +44,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://example.com/my-library.git'
-                    developerConnection = 'scm:git:ssh://example.com/my-library.git'
-                    url = 'http://example.com/my-library/'
+                    connection = 'scm:git:git://github.com/trackingplan/trackingplan-android.git'
+                    developerConnection = 'scm:git:ssh://github.com/trackingplan/trackingplan-android.git'
+                    url = 'https://github.com/trackingplan/trackingplan-android/tree/main'
                 }
             }
         }
