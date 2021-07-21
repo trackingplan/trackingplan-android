@@ -5,6 +5,8 @@
 - [Trackingplan](#trackingplan)  
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
 - [Building from sources](#building-from-sources)
+- [Need help?](#need-help)
+- [Learn more](#learn-more)
 
 ## Trackingplan
 
