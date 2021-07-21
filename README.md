@@ -54,7 +54,7 @@ dependencies {
 Then in the `onCreate` method of your Application's Main Activity, set up the SDK like so:
 
 ```java
-Trackingplan.init([YOUR TRACKINGPLAN ID GOES HERE]).start(this)
+Trackingplan.init("YOUR TRACKINGPLAN ID GOES HERE").start(this)
 ```
 
 And of course, import the SDK:
