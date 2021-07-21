@@ -4,6 +4,7 @@
 
 - [Trackingplan](#trackingplan)  
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
+- [Advanced options](#advanced-options)
 - [Building from sources](#building-from-sources)
 - [Need help?](#need-help)
 - [Learn more](#learn-more)
@@ -16,7 +17,7 @@ Trackingplan will monitor traffic between your app and data destinations and aut
 
 <img src="https://user-images.githubusercontent.com/47759/125635223-8298353f-168f-4e31-a881-bc1cb7b21b7e.png" width="400" />
 
-Trackingplan is currently available for Web, iOS and Android. More clients will come soon.
+Trackingplan is currently available for [Web](https://github.com/trackingplan/trackingplan.js), [iOS](https://github.com/trackingplan/trackingplan-android) and [Android](https://github.com/trackingplan/trackingplan-android). More clients will come soon.
 
 Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.com'>trackingplan.com</a> or write us directly team@trackingplan.com.
 
@@ -73,6 +74,22 @@ import com.trackingplan.client.sdk.Trackingplan;
 ```
 
 All set!
+
+## Advanced options
+
+Trackingplan for Android supports the same Advanced Options as Trackingplan for Web.
+For instance, to set a `source alias` and turn on `debug mode` use the following:
+
+```java
+Trackingplan.init("YOUR TRACKINGPLAN ID GOES HERE")
+    .sourceAlias("Android app")
+    .enableDebug()
+    .start(this)
+```
+
+Check the [Advanced Options](https://github.com/trackingplan/trackingplan.js#advanced-options) section for more details.
+
+Additionaly, there is a `dryRun` option available to let you test Trackingplan for Android without actually sending any data to Trackingplan.
 
 ## Building from sources
 
