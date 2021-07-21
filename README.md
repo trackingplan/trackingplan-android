@@ -1,118 +1,107 @@
-# Trackingplan for Android
+# Trackingplan for Android SDK
 
-## Get started
+With Trackingplan for Android you can make sure that your tracking is going as you planned without changing your current analytics stack or code. 
 
-### Requirements
-- Android Studio
-- Android SDK
-- Android emulator
+Trackingplan will monitor traffic between your app and data destinations and automatically detect any changes in your analytics implementation and warn you about inconsistencies like hit drops, missing properties, rogue events, and more.
 
-### Build Trackingplan Adapter (gradle plugin)
+<img src="https://user-images.githubusercontent.com/47759/125635223-8298353f-168f-4e31-a881-bc1cb7b21b7e.png" width="400" />
 
-```console
-$ cd _experimental/d3ce1t/android-client/adapter-plugin
-$ ./gradlew clean
-$ ./gradlew build
-$ ./gradlew publishToMavenLocal
+Trackingplan is currently available for Web, iOS and Android. More clients will come soon.
+
+Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.com'>trackingplan.com</a> or write us directly team@trackingplan.com.
+
+
+## Add Trackingplan to your Android app
+
+The recommended way to install Trackingplan for Android is using Android Studio. Please, make sure your project targets API level 21 (Lollipop) or later.
+
+First, add the Trackingplan dependency using Android Studio, like so:
+
+In Android Studio, expand the `Gradle Scripts` section
+
+![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
+
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.0.3` as a classpath dependency to the dependencies section:
+
+```gradle
+dependencies {   
+    // ...
+    classpath "com.trackingplan.client:adapter:1.0.3"
+    // ...
+}
 ```
 
-### Test
+After that, select the `module-level build.gradle` file and modify it as indicated below:
 
-- Run Android Studio
-- Open existing project located at `_experimental/d3ce1t/android-client/url-connection-app-example`
-- Run application in emulator
-- Observe logs in Run tab
+- add `id 'com.trackingplan.client'` to the plugins section.
+```gradle 
+plugins {
+    // ...
+    id 'com.trackingplan.client'
+    // ...
+}
+```
 
-### Adding Trackingplan Adapter to another project
+- add `implementation 'com.trackingplan.client:sdk:1.0.3'` to the dependencies section.
+```gradle
+dependencies {
+    // ...
+    implementation 'com.trackingplan.client:sdk:1.0.3'
+    // ...
+}
+```
 
-- Modify build.gradle at project level (see comments)
+Then in the `onCreate` method of your Application's Main Activity, set up the SDK like so:
 
-    ```gradle
+```java
+Trackingplan.init([YOUR TRACKINGPLAN ID GOES HERE]).start(this)
+```
 
-    buildscript {
-        repositories {
-            google()
-            mavenCentral()
-            mavenLocal() // <-- Add maven local
-        }
-        dependencies {
-            classpath "com.android.tools.build:gradle:4.2.1"
-            classpath "com.trackingplan.adapter:plugin:0.1" // <-- Add adapter plugin
-        }
+And of course, import the SDK:
+
+```java
+import com.trackingplan.client.sdk.Trackingplan;
+```
+
+All set!
+
+
+## How to build it from sources?
+
+First of all, clone this repository to a local directory in your machine. After that, open a terminal in that directory an run:
+
+```console
+$ ./gradlew cleanBuildLocalPublish
+```
+
+In order to use this custom built, modify your `project-level build.gradle` file as indicated below:
+
+```gradle
+buildscript {
+    repositories {
+        // ...
+        mavenLocal() // <-- Add maven local
     }
 
-    allprojects {
-        repositories {
-            google()
-            mavenCentral()
-            mavenLocal() // <-- Add maven local
-        }
+}
+
+allprojects {
+    repositories {
+        // ...
+        mavenLocal() // <-- Add maven local
     }
+}    
+```
 
-    task clean(type: Delete) {
-        delete rootProject.buildDir
-    }
-    ```
+Remember to change the version of Trackingplan in your dependencies to  `1.0-SNAPSHOT`.
 
-- Modify build.gradle at module level (see comments)
 
-    ```gradle
-    plugins {
-        id 'com.android.application'
-        id 'com.trackingplan.adapter' // <-- Apply Trackingplan Adapter plugin
-    }
+## Need help?
+Questions? Problems? Need more info? Contact us, and we can help!
 
-    android {
-        compileSdkVersion 30
-        buildToolsVersion "30.0.3"
 
-        defaultConfig {
-            applicationId "com.example.urlconnectionappexample"
-            minSdkVersion 16
-            targetSdkVersion 30
-            versionCode 1
-            versionName "1.0"
+## Learn more
 
-            testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        }
+Visit www.trackingplan.com.
 
-        buildTypes {
-            release {
-                minifyEnabled false
-                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            }
-        }
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
-    }
-
-    dependencies {
-        implementation 'androidx.appcompat:appcompat:1.3.0'
-        implementation 'com.google.android.material:material:1.3.0'
-        implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-        implementation 'com.trackingplan.adapter:sdk:0.1' // <-- Add SDK dependency
-        implementation 'commons-io:commons-io:2.9.0'
-        testImplementation 'junit:junit:4.+'
-        androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-        androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-    }
-    ```
-
-- Modify your MainActivity.java
-
-    ```java
-    // Import TrackingplanSdk in the top
-
-    import com.trackingplan.adapter.sdk.TrackingplanSdk;
-
-    // Initialize it in the onCreate method
-
-    try {
-        TrackingplanSdk.init("TPID").withDebugEnabled();
-    } catch (TrackingplanAlreadyInitializedException e) {
-        Log.e("MY_APP", e.getMessage());
-    }
-        
-    ```
+Copyright © 2021 Trackingplan Inc. All Rights Reserved.
