@@ -1,5 +1,13 @@
 # Trackingplan for Android SDK
 
+## Table of Contents
+
+- [Trackingplan](#trackingplan)  
+- [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
+- [Building from sources](#building-from-sources)
+
+## Trackingplan
+
 With Trackingplan for Android you can make sure that your tracking is going as you planned without changing your current analytics stack or code. 
 
 Trackingplan will monitor traffic between your app and data destinations and automatically detect any changes in your analytics implementation and warn you about inconsistencies like hit drops, missing properties, rogue events, and more.
@@ -9,7 +17,6 @@ Trackingplan will monitor traffic between your app and data destinations and aut
 Trackingplan is currently available for Web, iOS and Android. More clients will come soon.
 
 Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.com'>trackingplan.com</a> or write us directly team@trackingplan.com.
-
 
 ## Add Trackingplan to your Android app
 
@@ -65,8 +72,7 @@ import com.trackingplan.client.sdk.Trackingplan;
 
 All set!
 
-
-## How to build it from sources?
+## Building from sources
 
 First of all, clone this repository to a local directory in your machine. After that, open a terminal in that directory an run:
 
@@ -95,10 +101,8 @@ allprojects {
 
 Remember to change the version of Trackingplan in your dependencies to  `1.0-SNAPSHOT`.
 
-
 ## Need help?
 Questions? Problems? Need more info? Contact us, and we can help!
-
 
 ## Learn more
 
