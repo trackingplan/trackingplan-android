@@ -1,0 +1,73 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+    // id 'java-library-distribution'
+}
+
+version "${rootProject.ext.TrackingplanVersion}"
+
+gradlePlugin {
+    plugins {
+        TrackingplanAdapterPlugin {
+            id = 'com.trackingplan.client'
+            implementationClass = 'com.trackingplan.client.adapter.TrackingplanPlugin'
+        }
+    }
+}
+
+publishing {
+    publications {
+        // Creates a Maven publication called "release".
+        pluginMaven(MavenPublication) {
+
+            afterEvaluate {
+                groupId = rootProject.ext.groupId
+            }
+
+            pom {
+                name = "Trackingplan Android Adapter"
+                description = "Gradle plugin for Trackingplan Android SDK"
+                url = "https://www.trackingplan.com"
+                licenses {
+                    license {
+                        name = "MIT License"
+                        url = "http://www.opensource.org/licenses/mit-license.php"
+                    }
+                }
+                developers {
+                    developer {
+                        name = "Jose Padilla"
+                        email = "jose@trackingplan.com"
+                        organization = "Trackingplan"
+                        organizationUrl = "https://www.trackingplan.com"
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://example.com/my-library.git'
+                    developerConnection = 'scm:git:ssh://example.com/my-library.git'
+                    url = 'http://example.com/my-library/'
+                }
+            }
+        }
+    }
+}
+
+/*
+distributions {
+    main {
+        distributionBaseName = 'trackingplan-client'
+    }
+}
+*/
+
+dependencies {
+    compileOnly 'com.android.tools.build:gradle:4.2.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.ow2.asm:asm:9.1'
+    implementation 'org.ow2.asm:asm-commons:9.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
