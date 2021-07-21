@@ -21,7 +21,7 @@ allprojects {
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "1.0.3"
+    TrackingplanVersion = "1.0-SNAPSHOT"
 }
 
 task clean(type: Delete) {
