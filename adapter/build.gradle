@@ -1,10 +1,15 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
-    // id 'java-library-distribution'
 }
 
+group rootProject.ext.groupId
 version "${rootProject.ext.TrackingplanVersion}"
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
 
 gradlePlugin {
     plugins {
@@ -19,11 +24,6 @@ publishing {
     publications {
         // Creates a Maven publication called "release".
         pluginMaven(MavenPublication) {
-
-            afterEvaluate {
-                groupId = rootProject.ext.groupId
-            }
-
             pom {
                 name = "Trackingplan Android Adapter"
                 description = "Gradle plugin for Trackingplan Android SDK"
@@ -52,14 +52,6 @@ publishing {
         }
     }
 }
-
-/*
-distributions {
-    main {
-        distributionBaseName = 'trackingplan-client'
-    }
-}
-*/
 
 dependencies {
     compileOnly 'com.android.tools.build:gradle:4.2.0'
