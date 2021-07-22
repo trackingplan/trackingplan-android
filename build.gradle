@@ -21,7 +21,7 @@ allprojects {
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "1.0-SNAPSHOT"
+    TrackingplanVersion = "1.0.0-SNAPSHOT"
 }
 
 task clean(type: Delete) {
@@ -30,4 +30,18 @@ task clean(type: Delete) {
 
 task cleanBuildPublishLocal(type: GradleBuild) {
     tasks = ['clean', 'build', 'publishToMavenLocal']
+}
+
+task cleanBuildPublishSonatype(type: GradleBuild) {
+    tasks = ['clean', 'build', 'publishPluginMavenPublicationToSonatypeRepository', 'publishClientSdkPublicationToSonatypeRepository']
+}
+
+// Load local.properties to ext
+File secretPropsFile = project.rootProject.file('local.properties')
+if (secretPropsFile.exists()) {
+    Properties p = new Properties()
+    p.load(new FileInputStream(secretPropsFile))
+    p.each { name, value ->
+        ext[name] = value
+    }
 }

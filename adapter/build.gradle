@@ -1,6 +1,7 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'signing'
 }
 
 group rootProject.ext.groupId
@@ -20,44 +21,64 @@ gradlePlugin {
     }
 }
 
-publishing {
-    publications {
-        // Creates a Maven publication called "release".
-        pluginMaven(MavenPublication) {
-            pom {
-                name = "Trackingplan Android Adapter"
-                description = "Gradle plugin for Trackingplan Android SDK"
-                url = "https://www.trackingplan.com"
-                packaging = "jar"
-                licenses {
-                    license {
-                        name = "MIT License"
-                        url = "http://www.opensource.org/licenses/mit-license.php"
+dependencies {
+    compileOnly 'com.android.tools.build:gradle:4.2.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.ow2.asm:asm:9.1'
+    implementation 'org.ow2.asm:asm-commons:9.1'
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            pluginMaven(MavenPublication) {
+                pom {
+                    name = "Trackingplan Android Adapter"
+                    description = "Gradle plugin for Trackingplan Android SDK"
+                    url = "https://www.trackingplan.com"
+                    packaging = "jar"
+                    licenses {
+                        license {
+                            name = "MIT License"
+                            url = "http://www.opensource.org/licenses/mit-license.php"
+                        }
+                    }
+                    developers {
+                        developer {
+                            name = "Jose Padilla"
+                            email = "jose@trackingplan.com"
+                            organization = "Trackingplan"
+                            organizationUrl = "https://www.trackingplan.com"
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/trackingplan/trackingplan-android.git'
+                        developerConnection = 'scm:git:ssh://github.com/trackingplan/trackingplan-android.git'
+                        url = 'https://github.com/trackingplan/trackingplan-android/tree/main'
                     }
                 }
-                developers {
-                    developer {
-                        name = "Jose Padilla"
-                        email = "jose@trackingplan.com"
-                        organization = "Trackingplan"
-                        organizationUrl = "https://www.trackingplan.com"
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/trackingplan/trackingplan-android.git'
-                    developerConnection = 'scm:git:ssh://github.com/trackingplan/trackingplan-android.git'
-                    url = 'https://github.com/trackingplan/trackingplan-android/tree/main'
+            }
+        }
+        repositories {
+            maven {
+                name = "sonatype"
+
+                def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+                credentials {
+                    username ossrhUsername
+                    password ossrhPassword
                 }
             }
         }
     }
 }
 
-dependencies {
-    compileOnly 'com.android.tools.build:gradle:4.2.0'
-    implementation 'commons-io:commons-io:2.11.0'
-    implementation 'org.ow2.asm:asm:9.1'
-    implementation 'org.ow2.asm:asm-commons:9.1'
+signing {
+    sign publishing.publications
 }
 
 java {
