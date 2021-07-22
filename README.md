@@ -31,12 +31,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.0.3` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.0.4` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.0.3"
+    classpath "com.trackingplan.client:adapter:1.0.4"
     // ...
 }
 ```
@@ -52,11 +52,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.0.3'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.0.4'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.0.3'
+    implementation 'com.trackingplan.client:sdk:1.0.4'
     // ...
 }
 ```
@@ -118,7 +118,7 @@ allprojects {
 }    
 ```
 
-Remember to change the version of Trackingplan in your dependencies to  `1.0-SNAPSHOT`.
+Remember to change the version of Trackingplan in your dependencies to  `1.0.0-SNAPSHOT`.
 
 ## Need help?
 Questions? Problems? Need more info? Contact us at team@trackingplan.com, and we can help!
