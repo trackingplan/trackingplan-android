@@ -17,13 +17,13 @@ Trackingplan will monitor traffic between your app and data destinations and aut
 
 <img src="https://user-images.githubusercontent.com/47759/125635223-8298353f-168f-4e31-a881-bc1cb7b21b7e.png" width="400" />
 
-Trackingplan is currently available for [Web](https://github.com/trackingplan/trackingplan.js), [iOS](https://github.com/trackingplan/trackingplan-android) and [Android](https://github.com/trackingplan/trackingplan-android). More clients will come soon.
+Trackingplan is currently available for [Web](https://github.com/trackingplan/trackingplan.js), [iOS](https://github.com/trackingplan/trackingplan-ios) and [Android](https://github.com/trackingplan/trackingplan-android). More clients will come soon.
 
-Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.com'>trackingplan.com</a> or write us directly team@trackingplan.com.
+Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.com'>trackingplan.com</a> or write us to team@trackingplan.com.
 
 ## Add Trackingplan to your Android app
 
-The recommended way to install Trackingplan for Android is using Android Studio. Please, make sure your project targets API level 21 (Lollipop) or later.
+The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 21 (Lollipop) or later.
 
 First, add the Trackingplan dependency using Android Studio, like so:
 
@@ -43,7 +43,7 @@ dependencies {
 
 After that, select the `module-level build.gradle` file and modify it as indicated below:
 
-- add `id 'com.trackingplan.client'` to the plugins section.
+- Add `id 'com.trackingplan.client'` to the plugins section.
 ```gradle 
 plugins {
     // ...
@@ -52,7 +52,7 @@ plugins {
 }
 ```
 
-- add `implementation 'com.trackingplan.client:sdk:1.0.3'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.0.3'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
@@ -87,13 +87,13 @@ Trackingplan.init("YOUR TRACKINGPLAN ID GOES HERE")
     .start(this)
 ```
 
-Check the [Advanced Options](https://github.com/trackingplan/trackingplan.js#advanced-options) section for more details.
+Check the [JS SDK's Advanced Options](https://github.com/trackingplan/trackingplan.js#advanced-options) section for more details.
 
 Additionaly, there is a `dryRun` option available to let you test Trackingplan for Android without actually sending any data to Trackingplan.
 
-## Building from sources
+## Building from source code
 
-First of all, clone this repository to a local directory in your machine. After that, open a terminal in that directory an run:
+First of all, clone this repository to a local directory in your machine. After that, open a terminal in that directory and run:
 
 ```console
 $ ./gradlew cleanBuildLocalPublish
@@ -121,10 +121,8 @@ allprojects {
 Remember to change the version of Trackingplan in your dependencies to  `1.0-SNAPSHOT`.
 
 ## Need help?
-Questions? Problems? Need more info? Contact us, and we can help!
+Questions? Problems? Need more info? Contact us at team@trackingplan.com, and we can help!
 
 ## Learn more
 
 Visit www.trackingplan.com.
-
-Copyright © 2021 Trackingplan Inc. All Rights Reserved.
