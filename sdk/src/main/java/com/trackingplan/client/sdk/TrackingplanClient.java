@@ -26,6 +26,7 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.delivery.TrackBuilder;
 import com.trackingplan.client.sdk.exceptions.TrackingplanSendException;
 import com.trackingplan.client.sdk.interception.HttpRequest;
+import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.StreamUtils;
 
 import org.json.JSONArray;
@@ -43,6 +44,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 final public class TrackingplanClient {
+
+    private static final AndroidLogger logger = AndroidLogger.getInstance();
 
     public static final String TRACKS_END_POINT = "https://tracks.trackingplan.com/v1/";
     private static final String CONFIG_END_POINT = "https://config.trackingplan.com/";
@@ -98,11 +101,12 @@ final public class TrackingplanClient {
                 out.write(payload);
             }
 
-            // Connect is called explicitly because we don't care about the response.
-            // Nevertheless, tracks endpoint will return 204 if request was parsed correctly.
-            // Otherwise it will return a != 204 code.
+            // Read response code explicitly to force the sending of the request.
+            // Response is ignored. Tracks endpoint will return 204 if request was
+            // parsed correctly. Otherwise it will return a != 204 code.
+            int responseCode = conn.getResponseCode();
 
-            conn.connect();
+            logger.verbose("Client: Raw tracks sent. Response code " + responseCode);
 
         } catch (SocketTimeoutException ex) {
             throw new TrackingplanSendException("Connection to tracks timed out", ex);
