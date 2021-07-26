@@ -129,7 +129,7 @@ final public class HttpRequest {
 
     @NonNull
     public String getErrorMessage() {
-        return StringUtils.getValue(context.get("request_error"), "");
+        return StringUtils.getNonNullOrDefault(context.get("request_error"), "");
     }
 
     @NonNull

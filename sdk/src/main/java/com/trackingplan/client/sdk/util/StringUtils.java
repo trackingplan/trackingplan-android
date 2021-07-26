@@ -24,7 +24,7 @@ package com.trackingplan.client.sdk.util;
 import androidx.annotation.NonNull;
 
 public class StringUtils {
-    public static String getValue(String value, @NonNull String defaultValue) {
+    public static String getNonNullOrDefault(String value, @NonNull String defaultValue) {
         if (value == null) {
             return defaultValue;
         }
