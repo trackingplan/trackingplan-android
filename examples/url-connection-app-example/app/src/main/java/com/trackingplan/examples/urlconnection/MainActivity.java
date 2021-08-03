@@ -26,26 +26,17 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final int DEFAULT_BUFFER_SIZE = 8192;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
 
-        /*
-        Map<String, String> customDomains = new HashMap<String, String>() {{
-            put("postman-echo.com", "sarge-test");
-            put("reqres.in", "sarge-test");
-        }};
-        */
-
         Trackingplan.init("TP344383")
-                //.sourceAlias("Android Example")
                 .environment("PRODUCTION")
-                // .ignoreContext()
+                //.sourceAlias("Android Example")
                 // .customDomains(customDomains)
+                // .ignoreContext()
                 .enableDebug()
                 // .dryRun()
                 .start(this);
@@ -489,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
         private String convertInputStreamToString(InputStream is) throws IOException {
 
             ByteArrayOutputStream result = new ByteArrayOutputStream();
-            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+            byte[] buffer = new byte[8192];
             int length;
 
             while ((length = is.read(buffer)) != -1) {
