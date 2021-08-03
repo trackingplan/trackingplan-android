@@ -1,12 +1,13 @@
 package com.trackingplan.examples.urlconnection;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.trackingplan.client.sdk.Trackingplan;
+import com.trackingplan.examples.urlconnection.utils.StringUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                 // .ignoreContext()
                 // .customDomains(customDomains)
                 .enableDebug()
-                .dryRun()
+                // .dryRun()
                 .start(this);
 
         new Thread(new RandomGaEventsGenerator()).start();
@@ -54,14 +55,13 @@ public class MainActivity extends AppCompatActivity {
         // new Thread(new TestUrlConnection()).start();
     }
 
-    private static void setupJsonConnection(HttpURLConnection conn) {
-        conn.setRequestProperty("Accept", "application/json");
-    }
-
     private static class RandomGaEventsGenerator implements Runnable {
         @Override
         public void run() {
+
             boolean finish = false;
+
+            Log.i("AppExample", "Start");
 
             while (!finish) {
 
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
                 try {
                     long numRequests = getRandomNumber(4, 12);
-                    sendGaRequests(numRequests, 0, 3000);
+                    sendGaRandomRequests(numRequests, 0, 3000);
                 } catch (IOException | InterruptedException ex) {
                     Log.v("AppExample", "Error: " + ex.getMessage());
                 }
@@ -82,15 +82,25 @@ public class MainActivity extends AppCompatActivity {
                     finish = true;
                 }
             }
+
+            Log.i("AppExample", "Finish");
         }
 
-        private void sendGaRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
+        private void sendGaRandomRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
 
-            String rawURL = "https://www.google-analytics.com/collect?v=1&_v=j82&a=1391801276&t=item&_s=3&dl=https%3A%2F%2Fwww.spartoo.es%2Fcheckout_success.php&dr=https%3A%2F%2Fsas.redsys.es%2Fsas%2FSerSvlSecureAutentica%3Bjsessionid%3D0000nDaC_N534Mcfgc8uhYO_UVW%3A1ccv7n47o&ul=es-es&de=UTF-8&dt=SPARTOO.ES%2C%20%C2%A1pedido%20confirmado!&sd=24-bit&sr=1920x1080&vp=1903x947&je=0&_u=SCCAAAATAAAAg~&jid=&gjid=&cid=200010364.1590080236&uid=19041651&tid=UA-1265644-7&_gid=638039245.1590080236&cd1=0&cd2=0&cd3=1&cd4=0&cd5=0&cd6=0&cd7=0&cd8=0&cd9=0&cd10=0&cd11=0&cd12=0&cd13=0&cd14=0&cd15=0&cd16=0&cd17=0&cd18=0&cd19=0&cd20=0&ti=2000030011687828&in=Mobils%20By%20Mephisto-VALDEN-Cuero%20marr%C3%B3n-46%20&ic=VALDEN&iv=Mobils%20By%20Mephisto&ip=125.62&iq=1&z=1842788745";
+            for (int i = 0; i < numRequests; i++) {
 
-            for (int i = 0; i<numRequests; i++) {
+                String eventName = "Random" + StringUtils.getRandomAlphaNumericString(10);
+                String rawURL = "https://www.google-analytics.com/collect?v=1&_v=j81&a=1079976052" +
+                        "&t=event&_s=4&dl=https%3A%2F%2Fdice.fm%2Fevent&dr=https%3A%2F%2Fwww.example.com%2F" +
+                        "&ul=en&de=UTF-8&dt=Example&sd=24-bit&sr=2560x1080&vp=1691x709&je=0&ec=All" +
+                        "&ea=" + eventName + "&_u=aGBAAEIJ~&jid=&gjid=&cid=1438716784.1587727392" +
+                        "&uid=L4Zyw7Qf3mHk0OFDR%2FVFrkwMJ2w%3D" +
+                        "&tid=UA-49561032-1&_gid=803700221.1587727392&z=836139612";
+
                 URL url = new URL(rawURL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
                 try {
                     conn.getResponseCode();
                     Log.i("AppExample", "Request sent");
@@ -497,6 +507,10 @@ public class MainActivity extends AppCompatActivity {
         public TestFailedException(String message, Throwable cause) {
             super(message, cause);
         }
+    }
+
+    private static void setupJsonConnection(HttpURLConnection conn) {
+        conn.setRequestProperty("Accept", "application/json");
     }
 
     private static long getRandomNumber(long min, long max) {
