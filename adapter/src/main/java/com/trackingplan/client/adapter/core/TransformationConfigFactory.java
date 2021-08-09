@@ -25,6 +25,8 @@ import com.android.build.api.instrumentation.ClassContext;
 import com.google.common.collect.ImmutableList;
 
 import com.trackingplan.client.adapter.core.asm.MethodVisitorTransformationConfig;
+import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsLogEventIC;
+import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetDefaultEventParametersIC;
 import com.trackingplan.client.adapter.visitor_api.ClassDataTransformationConfig;
 import com.trackingplan.client.adapter.transform_api.ClassLoaderTransformationConfig;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionGetContentClassIC;
@@ -42,7 +44,9 @@ public class TransformationConfigFactory {
             new UrlConnectionOpenConnectionProxyIC(),
             new UrlConnectionOpenStreamIC(),
             new UrlConnectionGetContentIC(),
-            new UrlConnectionGetContentClassIC()
+            new UrlConnectionGetContentClassIC(),
+            new FirebaseAnalyticsLogEventIC(),
+            new FirebaseAnalyticsSetDefaultEventParametersIC()
     );
 
     public ClassLoaderTransformationConfig newClassLoaderTransformationConfig(ClassLoader classLoader) {

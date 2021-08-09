@@ -76,6 +76,8 @@ final public class TrackBuilder {
         String platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
 
         Pair<String, String> parsedPayload = parsePayload(request.getPayloadData());
+        String payloadString = parsedPayload.first;
+        String payloadType = parsedPayload.second;
 
         JSONObject rawTrack = new JSONObject();
 
@@ -85,9 +87,9 @@ final public class TrackBuilder {
         rawTrack.put("request", requestJson);
         requestJson.put("endpoint", request.getUrl());
         requestJson.put("method", request.getMethod());
-        requestJson.put("post_payload", parsedPayload.first);
-        if (parsedPayload.first != null) {
-            requestJson.put("post_payload_type", parsedPayload.second);
+        requestJson.put("post_payload", payloadString);
+        if (payloadString != null) {
+            requestJson.put("post_payload_type", payloadType);
         }
 
         requestJson.put("response_code", request.getResponseCode());
@@ -95,6 +97,9 @@ final public class TrackBuilder {
         JSONObject context = new JSONObject();
 
         if (!config.ignoreContext()) {
+            // TODO: App name
+            // TODO: App version
+            // TODO: App instance id
             context.put("device", device);
             context.put("platform", platform);
             for (Map.Entry<String, String> entry : request.getContext().entrySet()) {

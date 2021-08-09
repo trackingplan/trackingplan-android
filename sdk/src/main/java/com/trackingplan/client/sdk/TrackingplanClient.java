@@ -79,6 +79,12 @@ final public class TrackingplanClient {
 
         try {
             batchPayload = builder.createJsonPayload(requests, samplingRate);
+
+            if (config.isDebugEnabled()) {
+                String payloadString = batchPayload.toString(2);
+                logPayload("Batch\n" + payloadString);
+            }
+
         } catch (JSONException ex) {
             throw new TrackingplanSendException("Send failed", ex);
         }
@@ -124,5 +130,12 @@ final public class TrackingplanClient {
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/json");
         return conn;
+    }
+
+    private void logPayload(String payloadString) {
+        String[] lines = payloadString.split("\\r?\\n");
+        for (String line : lines) {
+            logger.verbose(line);
+        }
     }
 }

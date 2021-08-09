@@ -35,10 +35,6 @@ public class UrlConnectionGetContentIC extends MethodVisitorTransformationConfig
     private static final String METHOD_NAME;
     private static final String METHOD_DESC;
 
-    public UrlConnectionGetContentIC() {
-        super(new UrlConnectionGetContentTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
-    }
-
     static {
         try {
             CLASS_NAME = Type.getInternalName(URL.class);
@@ -48,5 +44,9 @@ public class UrlConnectionGetContentIC extends MethodVisitorTransformationConfig
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public UrlConnectionGetContentIC() {
+        super(new UrlConnectionGetContentTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
     }
 }

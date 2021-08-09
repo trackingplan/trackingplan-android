@@ -35,10 +35,6 @@ public class UrlConnectionOpenStreamIC extends MethodVisitorTransformationConfig
     private static final String METHOD_NAME;
     private static final String METHOD_DESC;
 
-    public UrlConnectionOpenStreamIC() {
-        super(new UrlConnectionOpenStreamTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
-    }
-
     static {
         try {
             CLASS_NAME = Type.getInternalName(URL.class);
@@ -48,5 +44,9 @@ public class UrlConnectionOpenStreamIC extends MethodVisitorTransformationConfig
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public UrlConnectionOpenStreamIC() {
+        super(new UrlConnectionOpenStreamTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
     }
 }

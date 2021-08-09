@@ -27,8 +27,6 @@ import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.util.StringUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,21 +56,6 @@ final public class HttpRequest {
     @NonNull
     public String getUrl() {
         return url;
-    }
-
-    @NonNull
-    public String getDomain() {
-
-        if (url.isEmpty()) {
-            return "";
-        }
-
-        try {
-            URI uri = new URI(url);
-            return uri.getHost();
-        } catch (URISyntaxException e) {
-            return "";
-        }
     }
 
     @NonNull
@@ -155,6 +138,7 @@ final public class HttpRequest {
                 ", payloadSize='" + payloadSizeBytes + '\'' +
                 ", url='" + url + '\'' +
                 ", created_at='" + createdTimeMs + '\'' +
+                ", context='" + context.toString() + '\'' +
                 ", payload='" + payloadStr + '\'' +
                 '}';
     }
@@ -207,9 +191,8 @@ final public class HttpRequest {
             return this;
         }
 
-        public Builder withProviders(final Map<String, String> providers) {
-            String provider = providers.get(request.getDomain());
-            request.provider = provider != null ? provider : "";
+        public Builder setProvider(@NonNull String provider) {
+            request.provider = provider;
             return this;
         }
 

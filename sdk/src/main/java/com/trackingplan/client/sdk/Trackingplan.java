@@ -37,6 +37,7 @@ final public class Trackingplan {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
+    // TODO: Do initialization in Provider to intercept Firebase installations
     @SuppressWarnings("unused")
     public static Initializer init(String tpId) {
         return new Initializer(tpId);

@@ -59,7 +59,7 @@ import java.util.Map;
  * thread (aka UI thread).
  * <p>
  * Trackingplan interception happens in Network threads (one or more). This is from where
- * {@link TrackingplanInstance#processRequestAsync} is called. However, after a request is
+ * InstrumentRequestBuilder#build() is called. However, after a request is
  * considered of interest for Trackingplan, it is managed synchronously in Trackingplan thread
  * (see {@link TrackingplanInstance#processRequest})
  * <p>
@@ -199,34 +199,9 @@ final public class TrackingplanInstance implements LifecycleObserver {
     }
 
     /**
-     * This method is the entry point to Trackingplan. It is called from the network thread of
-     * the consumer app whenever a request is intercepted. So request can arrive even when session
-     * data is still pending, i.e no sampling rate and no dice
+     * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder
      */
-    public void processRequestAsync(@NonNull final HttpRequest request) {
-
-        logger.debug("Request intercepted: " + request);
-
-        if (request.getProvider().isEmpty()) {
-            logger.verbose("Request ignored. Doesn't belong to a supported provider");
-            return;
-        }
-
-        if (request.hasConnectionError()) {
-            logger.verbose("Request ignored. Request failed locally with error: " + request.getErrorMessage());
-            return;
-        }
-
-        if (request.isPayloadTruncated()) {
-            logger.verbose("Request ignored. Payload was truncated");
-            return;
-        }
-
-        // Process requests synchronously in Trackingplan thread
-        runSync(() -> processRequest(request));
-    }
-
-    private void processRequest(@NonNull final HttpRequest request) {
+    public void processRequest(@NonNull final HttpRequest request) {
 
         checkRunningInTrackingplanThread();
 
@@ -344,6 +319,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
             put("api.mixpanel.com", "mixpanel");
             put("kissmetrics.com", "kissmetrics");
             put("sb.scorecardresearch.com", "scorecardresearch");
+            // put("firebaseinstallations.googleapis.com", "firebaseinstallations");
         }};
     }
 

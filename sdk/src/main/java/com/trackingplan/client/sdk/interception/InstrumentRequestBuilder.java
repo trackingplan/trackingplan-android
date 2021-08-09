@@ -32,10 +32,12 @@ import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.LogWrapper;
 
-final class InstrumentRequestBuilder {
+class InstrumentRequestBuilder {
 
-    final private HttpRequest.Builder builder;
-    final private TrackingplanInstance tpInstance;
+    private static final AndroidLogger logger = AndroidLogger.getInstance();
+
+    final protected HttpRequest.Builder builder;
+    final protected TrackingplanInstance tpInstance;
 
     public InstrumentRequestBuilder(TrackingplanInstance tpInstance) {
         this.builder = new HttpRequest.Builder();
@@ -71,8 +73,10 @@ final class InstrumentRequestBuilder {
     }
 
     /**
-     * This method is called from HTTP instruments used for request interception. So it is the
-     * entrypoint to the request processor and delivery system.
+     * This method is called from instruments used for request interception. So it is the
+     * entrypoint to the request processor and delivery system. Note that in HTTP instruments
+     * this method will be called from network thread of the consumer app whenever a request
+     * is intercepted.
      */
     public void build() {
         try {
@@ -90,14 +94,38 @@ final class InstrumentRequestBuilder {
                 }
             }
 
-            builder.withProviders(tpInstance.getProviders());
+            tpInstance.runSync(() -> {
 
-            HttpRequest request = builder.build();
-            tpInstance.processRequestAsync(request);
+                beforeBuild();
+
+                HttpRequest request = builder.build();
+                logger.debug("Request intercepted: " + request);
+
+                if (!shouldProcessRequest(request)) {
+                    return;
+                }
+
+                // Process requests synchronously in Trackingplan thread
+                tpInstance.processRequest(request);
+            });
 
         } catch (Exception ex) {
             AndroidLogger.getInstance().warn("Interception failed: " + ex.getMessage());
         }
+    }
+
+    protected void beforeBuild() {
+        // Empty implementation
+    }
+
+    protected boolean shouldProcessRequest(HttpRequest request) {
+
+        if (request.getProvider().isEmpty()) {
+            logger.verbose("Request ignored. Doesn't belong to a supported provider");
+            return false;
+        }
+
+        return true;
     }
 
     private String getTopActivityName(@NonNull Context context) {

@@ -35,10 +35,6 @@ public class UrlConnectionGetContentClassIC extends MethodVisitorTransformationC
     private static final String METHOD_NAME;
     private static final String METHOD_DESC;
 
-    public UrlConnectionGetContentClassIC() {
-        super(new UrlConnectionGetContentClassTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
-    }
-
     static {
         try {
             CLASS_NAME = Type.getInternalName(URL.class);
@@ -48,5 +44,9 @@ public class UrlConnectionGetContentClassIC extends MethodVisitorTransformationC
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public UrlConnectionGetContentClassIC() {
+        super(new UrlConnectionGetContentClassTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
     }
 }

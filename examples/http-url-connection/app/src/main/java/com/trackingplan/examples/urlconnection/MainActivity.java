@@ -7,7 +7,6 @@ import android.util.Pair;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.trackingplan.client.sdk.Trackingplan;
-import com.trackingplan.examples.urlconnection.utils.StringUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,11 +33,11 @@ public class MainActivity extends AppCompatActivity {
 
         Trackingplan.init("TP344383")
                 .environment("PRODUCTION")
-                //.sourceAlias("Android Example")
+                // .sourceAlias("Android Example")
                 // .customDomains(customDomains)
                 // .ignoreContext()
                 .enableDebug()
-                // .dryRun()
+                .dryRun()
                 .start(this);
 
         new Thread(new RandomGaEventsGenerator()).start();
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
             for (int i = 0; i < numRequests; i++) {
 
-                String eventName = "Random" + StringUtils.getRandomAlphaNumericString(10);
+                String eventName = "Random" + getRandomAlphaNumericString(10);
                 String rawURL = "https://www.google-analytics.com/collect?v=1&_v=j81&a=1079976052" +
                         "&t=event&_s=4&dl=https%3A%2F%2Fdice.fm%2Fevent&dr=https%3A%2F%2Fwww.example.com%2F" +
                         "&ul=en&de=UTF-8&dt=Example&sd=24-bit&sr=2560x1080&vp=1691x709&je=0&ec=All" +
@@ -506,5 +505,21 @@ public class MainActivity extends AppCompatActivity {
 
     private static long getRandomNumber(long min, long max) {
         return (long) ((Math.random() * (max - min)) + min);
+    }
+
+    private static String getRandomAlphaNumericString(int n) {
+
+        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                + "0123456789"
+                + "abcdefghijklmnopqrstuvxyz";
+
+        StringBuilder sb = new StringBuilder(n);
+
+        for (int i = 0; i < n; i++) {
+            int index = (int) (AlphaNumericString.length() * Math.random());
+            sb.append(AlphaNumericString.charAt(index));
+        }
+
+        return sb.toString();
     }
 }

@@ -23,7 +23,6 @@ gradlePlugin {
 
 dependencies {
     compileOnly 'com.android.tools.build:gradle:4.2.0'
-    implementation 'commons-io:commons-io:2.11.0'
     implementation 'org.ow2.asm:asm:9.1'
     implementation 'org.ow2.asm:asm-commons:9.1'
 }

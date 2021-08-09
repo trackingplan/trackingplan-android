@@ -32,6 +32,10 @@ task cleanBuildPublishLocal(type: GradleBuild) {
     tasks = ['clean', 'build', 'publishToMavenLocal']
 }
 
+task buildPublishLocal(type: GradleBuild) {
+    tasks = ['build', 'publishToMavenLocal']
+}
+
 task cleanBuildPublishSonatype(type: GradleBuild) {
     tasks = ['clean', 'build', 'publishPluginMavenPublicationToSonatypeRepository', 'publishClientSdkPublicationToSonatypeRepository']
 }

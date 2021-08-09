@@ -36,10 +36,6 @@ public class UrlConnectionOpenConnectionProxyIC extends MethodVisitorTransformat
     private static final String METHOD_NAME;
     private static final String METHOD_DESC;
 
-    public UrlConnectionOpenConnectionProxyIC() {
-        super(new UrlConnectionTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
-    }
-
     static {
         try {
             CLASS_NAME = Type.getInternalName(URL.class);
@@ -49,5 +45,9 @@ public class UrlConnectionOpenConnectionProxyIC extends MethodVisitorTransformat
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    public UrlConnectionOpenConnectionProxyIC() {
+        super(new UrlConnectionTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
     }
 }

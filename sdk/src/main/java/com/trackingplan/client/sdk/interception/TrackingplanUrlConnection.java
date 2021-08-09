@@ -62,7 +62,7 @@ public class TrackingplanUrlConnection {
 
     private static InputStream openStream(URL url, TrackingplanInstance tpInstance) throws IOException {
 
-        InstrumentRequestBuilder builder = new InstrumentRequestBuilder(tpInstance);
+        InstrumentRequestBuilder builder = new HttpInstrumentRequestBuilder(tpInstance);
         URLConnection connection = url.openConnection();
 
         if (connection instanceof HttpsURLConnection) {
@@ -95,7 +95,7 @@ public class TrackingplanUrlConnection {
 
     static Object getContent(final URL url, TrackingplanInstance tpInstance) throws IOException {
 
-        InstrumentRequestBuilder builder = new InstrumentRequestBuilder(tpInstance);
+        InstrumentRequestBuilder builder = new HttpInstrumentRequestBuilder(tpInstance);
         URLConnection connection = url.openConnection();
 
         if (connection instanceof HttpsURLConnection) {
@@ -115,7 +115,7 @@ public class TrackingplanUrlConnection {
             TrackingplanInstance tpInstance)
             throws IOException {
 
-        InstrumentRequestBuilder builder = new InstrumentRequestBuilder(tpInstance);
+        InstrumentRequestBuilder builder = new HttpInstrumentRequestBuilder(tpInstance);
         URLConnection connection = url.openConnection();
 
         if (connection instanceof HttpsURLConnection) {
@@ -137,11 +137,11 @@ public class TrackingplanUrlConnection {
         if (connection instanceof HttpsURLConnection) {
             return new InstrHttpsURLConnection(
                     (HttpsURLConnection) connection,
-                    new InstrumentRequestBuilder(TrackingplanInstance.getInstance()));
+                    new HttpInstrumentRequestBuilder(TrackingplanInstance.getInstance()));
         } else if (connection instanceof HttpURLConnection) {
             return new InstrHttpURLConnection(
                     (HttpURLConnection) connection,
-                    new InstrumentRequestBuilder(TrackingplanInstance.getInstance()));
+                    new HttpInstrumentRequestBuilder(TrackingplanInstance.getInstance()));
         }
         return connection;
     }
