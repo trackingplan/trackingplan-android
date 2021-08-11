@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Trackingplan.init("YOUR_TP_ID")
+                // .environment("PRODUCTION")
                 // .sourceAlias("Android Example")
                 // .customDomains(customDomains)
                 // .ignoreContext()

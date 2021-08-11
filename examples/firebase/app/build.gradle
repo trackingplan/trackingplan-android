@@ -31,7 +31,7 @@ android {
 
 dependencies {
 
-    implementation 'com.trackingplan.client:sdk:1.0.0-SNAPSHOT'
+    implementation 'com.trackingplan.client:sdk:1.1.0'
 
     implementation platform('com.google.firebase:firebase-bom:28.3.0')
     implementation 'com.google.firebase:firebase-analytics'
