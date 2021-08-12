@@ -260,14 +260,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendCustomEvent() {
-
         Bundle product = new Bundle();
         product.putString("name", "My Product");
         product.putDouble("price", 10.95);
-
-        Bundle bundle = new Bundle();
-        bundle.putString("user_id", "1");
-        bundle.putBundle("product", product);
-        mFirebaseAnalytics.logEvent("my_custom_event", bundle);
+        mFirebaseAnalytics.logEvent("my_custom_event", product);
     }
 }
