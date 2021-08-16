@@ -22,6 +22,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,7 +60,8 @@ public class MainActivity extends AppCompatActivity {
 
                 try {
                     long numRequests = getRandomNumber(4, 12);
-                    sendGaRandomRequests(numRequests, 0, 3000);
+                    sendGaRandomGetRequests(numRequests, 0, 3000);
+                    // sendGaRandomGzippedPostRequests(numRequests, 0, 3000);
                 } catch (IOException | InterruptedException ex) {
                     Log.v("AppExample", "Error: " + ex.getMessage());
                 }
@@ -76,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i("AppExample", "Finish");
         }
 
-        private void sendGaRandomRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
+        private void sendGaRandomGetRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
 
             for (int i = 0; i < numRequests; i++) {
 
@@ -90,6 +92,57 @@ public class MainActivity extends AppCompatActivity {
 
                 URL url = new URL(rawURL);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                try {
+                    conn.getResponseCode();
+                    Log.i("AppExample", "Request sent");
+                } finally {
+                    conn.disconnect();
+                }
+
+                long waitTimeMs = getRandomNumber(minTimeBetweenMs, maxTimeBetweenMs);
+                Thread.sleep(waitTimeMs);
+            }
+        }
+
+        private void sendGaRandomGzippedPostRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
+
+
+            for (int i = 0; i < numRequests; i++) {
+
+                String eventName = "Random" + getRandomAlphaNumericString(10);
+
+                String postPayload = "v=1&_v=j81&a=1079976052&t=event&ni=1&_s=4&dl=https%3A%2F%2Funity.com%2F" +
+                        "&dr=https%3A%2F%2Fwww.intercom.com%2Fcustomers%2Funity" +
+                        "&dp=%2F&ul=en&de=UTF-8" +
+                        "&dt=Unity%20Real-Time%20Development%20Platform%20%7C%203D%2C%202D%20VR%20%26%20AR%20Visualizations" +
+                        "&sd=24-bit" +
+                        "&sr=2560x1080" +
+                        "&vp=1335x709&je=0" +
+                        "&ec=All" +
+                        "&ea=" + eventName +
+                        "&el=100" +
+                        "&_u=aGDACEALR~" +
+                        "&jid=960160269" +
+                        "&gjid=1015578035" +
+                        "&cid=995732072.1587600203" +
+                        "&tid=UA-2854981-61" +
+                        "&_gid=1384444010.1587714237" +
+                        "&_r=1" +
+                        "&gtm=2wg4f05V25JL6" +
+                        "&z=994029658";
+
+                URL url = new URL("https://www.google-analytics.com/r/collect");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Content-encoding", "gzip");
+
+                try (OutputStream out = new GZIPOutputStream(conn.getOutputStream())) {
+                    byte[] buffer = postPayload.getBytes(StandardCharsets.UTF_8);
+                    out.write(buffer, 0, buffer.length);
+                }
 
                 try {
                     conn.getResponseCode();
@@ -164,10 +217,9 @@ public class MainActivity extends AppCompatActivity {
 
                 URL url = new URL(testItem.first);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                setupJsonConnection(conn);
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 try (OutputStream out = conn.getOutputStream()) {
                     byte[] buffer = testItem.second.getBytes(StandardCharsets.UTF_8);
@@ -500,7 +552,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static void setupJsonConnection(HttpURLConnection conn) {
-        conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("Content-Type", "application/json");
     }
 
     private static long getRandomNumber(long min, long max) {
