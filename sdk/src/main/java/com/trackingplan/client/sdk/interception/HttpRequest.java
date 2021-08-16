@@ -45,6 +45,7 @@ final public class HttpRequest {
     private int payloadSizeBytes = 0;
     private byte[] payloadData = new byte[0]; // Payload truncated
     private final Map<String, String> context = new HashMap<>();
+    private final Map<String, String> headers = new HashMap<>();
     private boolean hasError = false;
     private long createdTimeMs = 0;
     private String provider = "";
@@ -120,6 +121,11 @@ final public class HttpRequest {
         return Collections.unmodifiableMap(context);
     }
 
+    @NonNull
+    public Map<String, String> getHeaders() {
+        return Collections.unmodifiableMap(headers);
+    }
+
     @Override
     @NonNull
     public String toString() {
@@ -139,6 +145,7 @@ final public class HttpRequest {
                 ", url='" + url + '\'' +
                 ", created_at='" + createdTimeMs + '\'' +
                 ", context='" + context.toString() + '\'' +
+                ", headers='" + headers.toString() + '\'' +
                 ", payload='" + payloadStr + '\'' +
                 '}';
     }
@@ -188,6 +195,12 @@ final public class HttpRequest {
 
         public Builder addContextField(@NonNull String name, @NonNull String value) {
             request.context.put(name, value);
+            return this;
+        }
+
+        public Builder addHeaderField(String key, String value) {
+            String keyStr = key != null ? key.toLowerCase() : null;
+            request.headers.put(keyStr, value);
             return this;
         }
 

@@ -347,6 +347,7 @@ final class InstrURLConnectionBase {
         if (USER_AGENT_PROPERTY.equalsIgnoreCase(key)) {
             requestBuilder.setUserAgent(value);
         }
+        requestBuilder.addHeaderField(key, value);
         httpUrlConnection.setRequestProperty(key, value);
     }
 

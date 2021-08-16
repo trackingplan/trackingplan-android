@@ -16,6 +16,7 @@ final class FirebaseInstrumentRequestBuilder extends InstrumentRequestBuilder {
     protected void beforeBuild() {
         String instanceId = fa.getFirebaseInstanceId();
         builder.setProvider("lib-firebase");
+        builder.addHeaderField("Content-Type", "application/json");
         builder.addContextField("firebase_intance_id", instanceId);
     }
 }

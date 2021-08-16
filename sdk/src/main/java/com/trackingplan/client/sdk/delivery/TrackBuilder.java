@@ -23,7 +23,6 @@ package com.trackingplan.client.sdk.delivery;
 
 import android.os.Build;
 import android.util.Base64;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -31,6 +30,7 @@ import com.trackingplan.client.sdk.BuildConfig;
 import com.trackingplan.client.sdk.TrackingplanConfig;
 import com.trackingplan.client.sdk.interception.HttpRequest;
 import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.StringUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,8 +39,12 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 final public class TrackBuilder {
+
+    private static final String HEADER_CONTENT_TYPE = "content-type";
+    private static final String HEADER_CONTENT_ENCODING = "content-encoding";
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
@@ -75,10 +79,6 @@ final public class TrackBuilder {
         String device = Build.MANUFACTURER + " " + Build.MODEL;
         String platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
 
-        Pair<String, String> parsedPayload = parsePayload(request.getPayloadData());
-        String payloadString = parsedPayload.first;
-        String payloadType = parsedPayload.second;
-
         JSONObject rawTrack = new JSONObject();
 
         rawTrack.put("provider", request.getProvider());
@@ -87,10 +87,7 @@ final public class TrackBuilder {
         rawTrack.put("request", requestJson);
         requestJson.put("endpoint", request.getUrl());
         requestJson.put("method", request.getMethod());
-        requestJson.put("post_payload", payloadString);
-        if (payloadString != null) {
-            requestJson.put("post_payload_type", payloadType);
-        }
+        parsePayload(request, requestJson);
 
         requestJson.put("response_code", request.getResponseCode());
 
@@ -121,28 +118,54 @@ final public class TrackBuilder {
         return rawTrack;
     }
 
-    private Pair<String, String> parsePayload(byte[] payload) {
+    private void parsePayload(HttpRequest request, JSONObject requestJson) throws JSONException {
+
+        byte[] payload = request.getPayloadData();
 
         if (payload.length == 0) {
-            return new Pair<>(null, "string");
+            requestJson.put("post_payload", null);
+            return;
         }
 
-        String payloadStr;
-        String type;
+        String contentType = request.getHeaders().get(HEADER_CONTENT_TYPE);
+        String contentEncoding = request.getHeaders().get(HEADER_CONTENT_ENCODING);
 
-        try {
-            payloadStr = new String(payload, StandardCharsets.UTF_8);
-            type = "string";
-        } catch (Exception e) {
-            payloadStr = bytesTob64(payload).trim();
-            type = "base64";
+        if (!StringUtils.isEmpty(contentEncoding) || isGzipCompressed(payload)) {
+            requestJson.put("post_payload", bytesTob64(payload));
+            requestJson.put("post_payload_encoding", StringUtils.getNonNullOrDefault(contentEncoding, "gzip") + ", b64");
+        } else {
+
+            String payloadStr = bytesToUtf8(payload);
+
+            if ("application/json".equals(contentType)) {
+                try {
+                    requestJson.put("post_payload", new JSONObject(payloadStr));
+                } catch (JSONException ex) {
+                    requestJson.put("post_payload", payloadStr);
+                }
+            } else {
+                requestJson.put("post_payload", payloadStr);
+            }
         }
 
-        return new Pair<>(payloadStr, type);
+        requestJson.put("post_payload_type", StringUtils.getNonNullOrDefault(contentType, "application/octet-stream"));
     }
 
     private String bytesTob64(byte[] bytes) {
-        byte[] encoded = Base64.encode(bytes, Base64.DEFAULT);
+        byte[] encoded = Base64.encode(bytes, Base64.DEFAULT | Base64.NO_WRAP);
         return new String(encoded);
+    }
+
+    private String bytesToUtf8(byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    private boolean isGzipCompressed(byte[] bytes)
+    {
+        if ((bytes == null) || (bytes.length < 2)) {
+            return false;
+        } else {
+            return ((bytes[0] == (byte) (GZIPInputStream.GZIP_MAGIC)) && (bytes[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8)));
+        }
     }
 }

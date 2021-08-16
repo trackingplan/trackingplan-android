@@ -30,4 +30,8 @@ public class StringUtils {
         }
         return value;
     }
+
+    public static boolean isEmpty(String value) {
+        return value == null || value.isEmpty();
+    }
 }

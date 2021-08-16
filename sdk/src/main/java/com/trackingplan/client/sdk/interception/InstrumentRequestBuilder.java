@@ -56,6 +56,10 @@ class InstrumentRequestBuilder {
         builder.setUserAgent(userAgent);
     }
 
+    public void addHeaderField(String key, String value) {
+        builder.addHeaderField(key, value);
+    }
+
     public void setHttpResponseCode(int responseCode) {
         builder.setHttpResponseCode(responseCode);
     }
@@ -140,7 +144,7 @@ class InstrumentRequestBuilder {
             name = cn.getClassName();
 
         } catch (Exception ignored) {
-            // TODO: Review. Should fail silently?
+            // Fail silently
         }
 
         return name;
