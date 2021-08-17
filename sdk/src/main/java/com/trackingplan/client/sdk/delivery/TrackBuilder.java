@@ -113,7 +113,6 @@ final public class TrackBuilder {
         rawTrack.put("sdk_version", BuildConfig.SDK_VERSION);
 
         rawTrack.put("sampling_rate", samplingRate);
-        rawTrack.put("debug", false);
 
         return rawTrack;
     }
@@ -132,7 +131,7 @@ final public class TrackBuilder {
 
         if (!StringUtils.isEmpty(contentEncoding) || isGzipCompressed(payload)) {
             requestJson.put("post_payload", bytesTob64(payload));
-            requestJson.put("post_payload_encoding", StringUtils.getNonNullOrDefault(contentEncoding, "gzip") + ", b64");
+            requestJson.put("post_payload_type", "gzip_base64");
         } else {
 
             String payloadStr = bytesToUtf8(payload);
@@ -147,8 +146,6 @@ final public class TrackBuilder {
                 requestJson.put("post_payload", payloadStr);
             }
         }
-
-        requestJson.put("post_payload_type", StringUtils.getNonNullOrDefault(contentType, "application/octet-stream"));
     }
 
     private String bytesTob64(byte[] bytes) {
