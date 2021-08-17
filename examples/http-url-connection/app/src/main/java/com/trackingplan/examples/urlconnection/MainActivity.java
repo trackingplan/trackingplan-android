@@ -573,7 +573,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static long getRandomNumber(long min, long max) {
-        return (long) ((Math.random() * (max - min)) + min);
+        return (long) (Math.random() * (1 + max - min) + min);
     }
 
     private static String getRandomAlphaNumericString(int n) {
