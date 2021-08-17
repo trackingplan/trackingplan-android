@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     long numRequests = getRandomNumber(4, 12);
                     sendGaRandomGetRequests(numRequests, 0, 3000);
-                    // sendGaRandomGzippedPostRequests(numRequests, 0, 3000);
+                    sendGaRandomPostRequests(numRequests, 0, 3000);
                 } catch (IOException | InterruptedException ex) {
                     Log.v("AppExample", "Error: " + ex.getMessage());
                 }
@@ -105,10 +105,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        private void sendGaRandomGzippedPostRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
-
+        private void sendGaRandomPostRequests(long numRequests, long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
 
             for (int i = 0; i < numRequests; i++) {
+
+                boolean compressed = getRandomNumber(0, 1) > 0;
 
                 String eventName = "Random" + getRandomAlphaNumericString(10);
 
@@ -137,9 +138,12 @@ public class MainActivity extends AppCompatActivity {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                conn.setRequestProperty("Content-encoding", "gzip");
 
-                try (OutputStream out = new GZIPOutputStream(conn.getOutputStream())) {
+                if (compressed) {
+                    conn.setRequestProperty("Content-encoding", "gzip");
+                }
+
+                try (OutputStream out = getOutputStream(conn, compressed)) {
                     byte[] buffer = postPayload.getBytes(StandardCharsets.UTF_8);
                     out.write(buffer, 0, buffer.length);
                 }
@@ -162,7 +166,8 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             try {
                 runGAGetTests();
-                runGAPostTests();
+                runGAPostTests(false);
+                runGAPostTests(true);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -197,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        private void runGAPostTests() throws IOException {
+        private void runGAPostTests(boolean compressed) throws IOException {
 
             // TODO: Load test data instead of copying here
             ArrayList<Pair<String, String>> testItems = new ArrayList<Pair<String, String>>() {{
@@ -221,11 +226,15 @@ public class MainActivity extends AppCompatActivity {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                try (OutputStream out = conn.getOutputStream()) {
+                if (compressed) {
+                    conn.setRequestProperty("Content-encoding", "gzip");
+                }
+                
+                try (OutputStream out = getOutputStream(conn, compressed)) {
                     byte[] buffer = testItem.second.getBytes(StandardCharsets.UTF_8);
                     out.write(buffer, 0, buffer.length);
                 }
-
+                
                 try {
                     conn.getResponseCode();
                 } finally {
@@ -548,6 +557,14 @@ public class MainActivity extends AppCompatActivity {
         }
         public TestFailedException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    private static OutputStream getOutputStream(HttpURLConnection conn, boolean compressed) throws IOException {
+        if (compressed) {
+            return new GZIPOutputStream(conn.getOutputStream());
+        } else {
+            return conn.getOutputStream();
         }
     }
 
