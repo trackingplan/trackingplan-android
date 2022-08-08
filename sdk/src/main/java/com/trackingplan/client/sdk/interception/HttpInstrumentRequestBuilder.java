@@ -1,3 +1,4 @@
+// Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk.interception;
 
 import androidx.annotation.NonNull;
@@ -8,29 +9,12 @@ import com.trackingplan.client.sdk.util.AndroidLogger;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-final class HttpInstrumentRequestBuilder extends InstrumentRequestBuilder {
+public final class HttpInstrumentRequestBuilder extends InstrumentRequestBuilder {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-    private String url = "";
-
-    public HttpInstrumentRequestBuilder(TrackingplanInstance tpInstance) {
-        super(tpInstance);
-    }
-
-    @Override
-    public void setUrl(@NonNull String url) {
-        super.setUrl(url);
-        this.url = url;
-    }
-
-    @Override
-    protected void beforeBuild() {
-        String provider = tpInstance.getProviders().get(getDomain(url));
-        if (provider != null) {
-            builder.setProvider(provider);
-        }
-        this.url = "";
+    public HttpInstrumentRequestBuilder(TrackingplanInstance tpInstance, @NonNull String instrument) {
+        super(tpInstance, instrument);
     }
 
     @Override
@@ -47,20 +31,5 @@ final class HttpInstrumentRequestBuilder extends InstrumentRequestBuilder {
         }
 
         return super.shouldProcessRequest(request);
-    }
-
-    @NonNull
-    private static String getDomain(@NonNull String url) {
-
-        if (url.isEmpty()) {
-            return "";
-        }
-
-        try {
-            URI uri = new URI(url);
-            return uri.getHost();
-        } catch (URISyntaxException e) {
-            return "";
-        }
     }
 }

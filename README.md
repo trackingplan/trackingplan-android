@@ -31,12 +31,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.1.2` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.2.2` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.1.2"
+    classpath "com.trackingplan.client:adapter:1.2.2"
     // ...
 }
 ```
@@ -52,11 +52,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.1.2'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.2.2'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.1.2'
+    implementation 'com.trackingplan.client:sdk:1.2.2'
     // ...
 }
 ```
@@ -77,26 +77,38 @@ All set!
 
 ## Advanced options
 
-Trackingplan for Android supports the same Advanced Options as Trackingplan for Web.
-For instance, to set a `source alias` and turn on `debug mode` use the following:
+Trackingplan for Android supports the following `advanced options` during its initialization:
+
+
+| Parameter | Description | Default |
+| ----------|-------------|---------------|
+| `environment(value)` | Allows to isolate the data between production and testing environments. | `PRODUCTION` |
+| `sourceAlias(value)` | Allows to differentiate between sources. | `android` |
+| `customDomains(map)` | Allows to extend the list of monitored domains. Any request made to these domains will also be forwarded to Trackingplan. The `map argument` must be a `key-value` with the domain to be looked for and the alias you want to use for that analytics domain. | `empty map`            |
+| `enableDebug()`         | Enables debug mode. Prints debug information in the console. | `disabled` | 
+| `dryRun()` | Enables dry run mode. Do not send intercepted requests to Trackingplan. | `disabled` |
+
+### Example
 
 ```java
-Trackingplan.init("YOUR TRACKINGPLAN ID GOES HERE")
-    .sourceAlias("Android app")
-    .enableDebug()
+Trackingplan.init("YOUR_TP_ID")
+    .environment("development")
+    .sourceAlias("my_application")
+    .customDomains(new HashMap<>(){{
+        put("my.domain.com", "myanalytics");
+    }})
+//  .enableDebug()
+//  .dryRun()
     .start(this)
 ```
 
-Check the [JS SDK's Advanced Options](https://github.com/trackingplan/trackingplan.js#advanced-options) section for more details.
-
-Additionaly, there is a `dryRun` option available to let you test Trackingplan for Android without actually sending any data to Trackingplan.
 
 ## Building from source code
 
 First of all, clone this repository to a local directory in your machine. After that, open a terminal in that directory and run:
 
 ```console
-$ ./gradlew cleanBuildLocalPublish
+$ ./gradlew cleanBuildPublishLocal
 ```
 
 In order to use this custom built, modify your `project-level build.gradle` file as indicated below:
@@ -118,7 +130,7 @@ allprojects {
 }    
 ```
 
-Remember to change the version of Trackingplan in your dependencies to  `1.0.0-SNAPSHOT`.
+Remember to change the version of Trackingplan in your dependencies to  `1.2.0-SNAPSHOT`.
 
 ## Need help?
 Questions? Problems? Need more info? We can help! Contact us [here](mailto:team@trackingplan.com).

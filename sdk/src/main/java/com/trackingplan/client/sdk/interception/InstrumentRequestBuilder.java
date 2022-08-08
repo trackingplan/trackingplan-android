@@ -1,24 +1,4 @@
-// MIT License
-//
 // Copyright (c) 2021 Trackingplan
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 package com.trackingplan.client.sdk.interception;
 
 import android.app.ActivityManager;
@@ -32,16 +12,18 @@ import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.LogWrapper;
 
-class InstrumentRequestBuilder {
+public class InstrumentRequestBuilder {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
     final protected HttpRequest.Builder builder;
     final protected TrackingplanInstance tpInstance;
+    final protected String instrument;
 
-    public InstrumentRequestBuilder(TrackingplanInstance tpInstance) {
+    public InstrumentRequestBuilder(TrackingplanInstance tpInstance, @NonNull String instrument) {
         this.builder = new HttpRequest.Builder();
         this.tpInstance = tpInstance;
+        this.instrument = instrument;
     }
 
     public void setUrl(@NonNull String url) {
@@ -68,7 +50,7 @@ class InstrumentRequestBuilder {
         builder.setRequestPayload(payload);
     }
 
-    public void setRequestPayloadNumBytes(int numBytes) {
+    public void setRequestPayloadNumBytes(long numBytes) {
         builder.setRequestPayloadNumBytes(numBytes);
     }
 
@@ -91,12 +73,9 @@ class InstrumentRequestBuilder {
                 return;
             }
 
-            if (!tpInstance.getConfig().ignoreContext()) {
-                String name = getTopActivityName(tpInstance.getContext());
-                if (name != null) {
-                    builder.addContextField("activity", name);
-                }
-            }
+            builder.setInterceptionModule(instrument);
+
+            final var interceptionContext = createInterceptionContext();
 
             tpInstance.runSync(() -> {
 
@@ -110,7 +89,7 @@ class InstrumentRequestBuilder {
                 }
 
                 // Process requests synchronously in Trackingplan thread
-                tpInstance.processRequest(request);
+                tpInstance.processRequest(request, interceptionContext);
             });
 
         } catch (Exception ex) {
@@ -122,14 +101,24 @@ class InstrumentRequestBuilder {
         // Empty implementation
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean shouldProcessRequest(HttpRequest request) {
+        return true;
+    }
 
-        if (request.getProvider().isEmpty()) {
-            logger.verbose("Request ignored. Doesn't belong to a supported provider");
-            return false;
+    @NonNull
+    private InterceptionContext createInterceptionContext() {
+
+        var context = new InterceptionContext();
+
+        context.instrument = instrument;
+
+        String activityName = getTopActivityName(tpInstance.getContext());
+        if (activityName != null) {
+            context.activityName = activityName;
         }
 
-        return true;
+        return context;
     }
 
     private String getTopActivityName(@NonNull Context context) {

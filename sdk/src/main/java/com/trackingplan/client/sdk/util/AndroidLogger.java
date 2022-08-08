@@ -44,7 +44,7 @@ public class AndroidLogger {
 
     private final LogWrapper logWrapper;
 
-    private boolean isLogcatEnabled = false;
+    private boolean isLogcatEnabled = true;
 
     public static AndroidLogger getInstance() {
         if (instance == null) {

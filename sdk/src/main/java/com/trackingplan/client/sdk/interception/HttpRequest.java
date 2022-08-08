@@ -1,24 +1,4 @@
-// MIT License
-//
 // Copyright (c) 2021 Trackingplan
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 package com.trackingplan.client.sdk.interception;
 
 import android.os.SystemClock;
@@ -30,6 +10,7 @@ import com.trackingplan.client.sdk.util.StringUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -42,13 +23,14 @@ final public class HttpRequest {
     private String method = "GET";
     private String userAgent = "";
     private int responseCode = -1;
-    private int payloadSizeBytes = 0;
+    private long payloadSizeBytes = 0;
     private byte[] payloadData = new byte[0]; // Payload truncated
     private final Map<String, String> context = new HashMap<>();
     private final Map<String, String> headers = new HashMap<>();
     private boolean hasError = false;
     private long createdTimeMs = 0;
     private String provider = "";
+    private String interceptionModule = "";
 
     private HttpRequest() {
         // Empty constructor
@@ -74,6 +56,15 @@ final public class HttpRequest {
         return provider;
     }
 
+    public void setProvider(@NonNull String provider) {
+        this.provider = provider;
+    }
+
+    @NonNull
+    public String getInterceptionModule() {
+        return interceptionModule;
+    }
+
     /**
      * Gets the status code of the intercepted HTTP request.
      * Return -1 if no code can be discerned. For instance,
@@ -86,7 +77,7 @@ final public class HttpRequest {
         return responseCode;
     }
 
-    public int getPayloadSizeBytes() {
+    public long getPayloadSizeBytes() {
         return payloadSizeBytes;
     }
 
@@ -121,6 +112,10 @@ final public class HttpRequest {
         return Collections.unmodifiableMap(context);
     }
 
+    public void addContextField(@NonNull String name, @NonNull String value) {
+        context.put(name, value);
+    }
+
     @NonNull
     public Map<String, String> getHeaders() {
         return Collections.unmodifiableMap(headers);
@@ -141,6 +136,7 @@ final public class HttpRequest {
                 ", failed='" + (hasError ? "Yes" : "No") + '\'' +
                 ", responseCode='" + responseCode + '\'' +
                 ", provider='" + provider + '\'' +
+                ", intercepted by='" + interceptionModule + '\'' +
                 ", payloadSize='" + payloadSizeBytes + '\'' +
                 ", url='" + url + '\'' +
                 ", created_at='" + createdTimeMs + '\'' +
@@ -179,7 +175,7 @@ final public class HttpRequest {
             return this;
         }
 
-        public Builder setRequestPayloadNumBytes(int numBytes) {
+        public Builder setRequestPayloadNumBytes(long numBytes) {
             request.payloadSizeBytes = numBytes;
             return this;
         }
@@ -199,13 +195,18 @@ final public class HttpRequest {
         }
 
         public Builder addHeaderField(String key, String value) {
-            String keyStr = key != null ? key.toLowerCase() : null;
+            String keyStr = key != null ? key.toLowerCase(Locale.ROOT) : null;
             request.headers.put(keyStr, value);
             return this;
         }
 
         public Builder setProvider(@NonNull String provider) {
             request.provider = provider;
+            return this;
+        }
+
+        public Builder setInterceptionModule(@NonNull String interceptionModule) {
+            request.interceptionModule = interceptionModule;
             return this;
         }
 

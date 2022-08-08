@@ -1,3 +1,4 @@
+// Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk.util;
 
 import android.os.Bundle;

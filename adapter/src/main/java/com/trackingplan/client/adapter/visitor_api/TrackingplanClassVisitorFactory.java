@@ -1,74 +1,79 @@
-// MIT License
-//
 // Copyright (c) 2021 Trackingplan
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 package com.trackingplan.client.adapter.visitor_api;
 
-import com.android.build.api.extension.AndroidComponentsExtension;
+import com.android.annotations.NonNull;
 import com.android.build.api.instrumentation.AsmClassVisitorFactory;
 import com.android.build.api.instrumentation.ClassContext;
 import com.android.build.api.instrumentation.ClassData;
 import com.android.build.api.instrumentation.FramesComputationMode;
-import com.android.build.api.instrumentation.InstrumentationParameters.None;
+import com.android.build.api.instrumentation.InstrumentationParameters;
 import com.android.build.api.instrumentation.InstrumentationScope;
+import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationVariant;
-import com.trackingplan.client.adapter.core.AdapterFlagState;
 import com.trackingplan.client.adapter.core.asm.AdapterClassVisitor;
 import com.trackingplan.client.adapter.core.TransformableChecker;
 import com.trackingplan.client.adapter.core.TransformationConfigFactory;
+import com.trackingplan.client.adapter.util.GradleLogger;
 
 import org.gradle.api.Project;
-import org.jetbrains.annotations.NotNull;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 import org.objectweb.asm.ClassVisitor;
 
-import java.util.stream.Collectors;
-
-import kotlin.Pair;
 import kotlin.Unit;
 
-public abstract class TrackingplanClassVisitorFactory implements AsmClassVisitorFactory<None> {
+public abstract class TrackingplanClassVisitorFactory
+        implements AsmClassVisitorFactory<TrackingplanClassVisitorFactory.TrackingplanParameters> {
 
-    public static void registerForProject(Project project, AdapterFlagState adapterFlagState) {
-        AndroidComponentsExtension androidComponents = project.getExtensions().getByType(AndroidComponentsExtension.class);
-        androidComponents.onVariants(androidComponents.selector().all(), (variantProperties) -> {
-            ApplicationVariant appVariant = (ApplicationVariant) variantProperties;
-            boolean instrumentationEnabled = adapterFlagState.isEnabledFor(appVariant.getName(), appVariant.getBuildType(), appVariant.getProductFlavors().stream().map(Pair::getSecond).collect(Collectors.toList()));
-            if (instrumentationEnabled) {
-                appVariant.transformClassesWith(TrackingplanClassVisitorFactory.class, InstrumentationScope.ALL, (params) -> Unit.INSTANCE);
-                appVariant.setAsmFramesComputationMode(FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES);
-            }
-        });
+    private static final GradleLogger logger = GradleLogger.getInstance();
+
+    public abstract static class TrackingplanParameters implements InstrumentationParameters {
+
+        /**
+         * AGP will re-instrument dependencies, when the [InstrumentationParameters] changed
+         * https://issuetracker.google.com/issues/190082518#comment4. This is just a dummy parameter
+         * that is used solely for that purpose.
+         */
+        @Input
+        @Optional
+        public abstract Property<Long> getInvalidate();
     }
 
-    @NotNull
+    @NonNull
     @Override
-    public ClassVisitor createClassVisitor(@NotNull ClassContext classContext, @NotNull ClassVisitor classVisitor) {
+    public ClassVisitor createClassVisitor(@NonNull ClassContext classContext, @NonNull ClassVisitor nextClassVisitor) {
+        var configs = (new TransformationConfigFactory()).newTransformationConfig(classContext);
         return new AdapterClassVisitor(
                 this.getInstrumentationContext().getApiVersion().get(),
-                classVisitor,
-                (new TransformationConfigFactory()).newClassDataTransformationConfig(classContext)
+                nextClassVisitor,
+                configs
         );
     }
 
     @Override
-    public boolean isInstrumentable(@NotNull ClassData classData) {
-        return TransformableChecker.isClassInstrumentable(classData.getClassName());
+    public boolean isInstrumentable(@NonNull ClassData classData) {
+        var instrumentable = TransformableChecker.isClassInstrumentable(classData.getClassName());
+        logger.debug(String.format("Maybe instrument %s? %s", classData.getClassName(), instrumentable ? "Yes" : "No"));
+        return instrumentable;
+    }
+
+    public static void registerForProject(Project project) {
+        var androidComponents = project.getExtensions().getByType(AndroidComponentsExtension.class);
+        androidComponents.onVariants(androidComponents.selector().all(), variant -> {
+            registerForVariant((ApplicationVariant) variant);
+        });
+    }
+
+    public static void registerForVariant(ApplicationVariant appVariant) {
+        var instrumentation = appVariant.getInstrumentation();
+        instrumentation.transformClassesWith(TrackingplanClassVisitorFactory.class, InstrumentationScope.ALL,
+                params -> {
+                    // Force re-instrumentation of dependencies by avoiding any caches
+                    params.getInvalidate().set(System.currentTimeMillis());
+                    params.getInvalidate().disallowChanges();
+                    return Unit.INSTANCE;
+                });
+        instrumentation.setAsmFramesComputationMode(FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES);
     }
 }

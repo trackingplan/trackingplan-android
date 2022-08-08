@@ -1,4 +1,4 @@
-package com.trackingplan.adapter.sdk;
+package com.trackingplan.client.sdk;
 
 import android.content.Context;
 

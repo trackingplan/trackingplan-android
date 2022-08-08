@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.URLConnectionAppExample">
-        <activity android:name="com.trackingplan.examples.urlconnection.MainActivity">
+        <activity android:name="com.trackingplan.examples.urlconnection.MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

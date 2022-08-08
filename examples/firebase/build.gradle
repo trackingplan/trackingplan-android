@@ -1,17 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-buildscript {
-    repositories {
-        // mavenLocal()
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:7.0.0"
-        classpath "com.trackingplan.client:adapter:1.1.2"
-        classpath "com.google.gms:google-services:4.3.10"
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
+plugins {
+    id 'com.android.application' version '7.2.1' apply false
+    id 'com.android.library' version '7.2.1' apply false
+    id 'com.google.gms.google-services' version '4.3.10' apply false
+    id 'com.trackingplan.client' version '1.2.0-SNAPSHOT' apply false
 }
 
 task clean(type: Delete) {

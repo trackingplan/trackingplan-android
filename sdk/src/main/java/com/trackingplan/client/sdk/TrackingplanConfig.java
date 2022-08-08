@@ -1,24 +1,4 @@
-// MIT License
-//
 // Copyright (c) 2021 Trackingplan
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 package com.trackingplan.client.sdk;
 
 import androidx.annotation.NonNull;
@@ -26,15 +6,20 @@ import androidx.annotation.NonNull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Immutable class
  */
 final public class TrackingplanConfig {
 
+    public static final int MAX_REQUEST_BODY_SIZE_IN_BYTES = 100 * 1024;
+
     public final static float SAMPLING_RATE_UNINITIALIZED = -1;
 
-    private final String tpId;
+    public final static TrackingplanConfig emptyConfig = new TrackingplanConfig();
+
+    private String tpId;
     private String environment;
     private String sourceAlias;
     private final Map<String, String> customDomains = new HashMap<>();
@@ -43,12 +28,18 @@ final public class TrackingplanConfig {
     private boolean debug;
     private boolean dryRun;
 
-    private TrackingplanConfig(String tpId) {
-        this.tpId = tpId;
+    private TrackingplanConfig() {
+        this.tpId = "";
         this.environment = "PRODUCTION";
         this.ignoreContext = false;
+        this.sourceAlias = "android";
         this.debug = false;
         this.dryRun = false;
+    }
+
+    private TrackingplanConfig(String tpId) {
+        this();
+        this.tpId = tpId;
     }
 
     @NonNull
@@ -95,6 +86,25 @@ final public class TrackingplanConfig {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TrackingplanConfig that = (TrackingplanConfig) o;
+        return ignoreContext == that.ignoreContext
+                && debug == that.debug
+                && dryRun == that.dryRun
+                && tpId.equals(that.tpId)
+                && environment.equals(that.environment)
+                && sourceAlias.equals(that.sourceAlias)
+                && customDomains.equals(that.customDomains);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tpId, environment, sourceAlias, customDomains, ignoreContext, debug, dryRun);
+    }
+
     static class Builder {
 
         private TrackingplanConfig config;
@@ -131,6 +141,7 @@ final public class TrackingplanConfig {
             config.customDomains.putAll(customDomains);
         }
 
+        @NonNull
         public TrackingplanConfig build() {
 
             TrackingplanConfig result = this.config;

@@ -1,42 +1,22 @@
-// MIT License
-//
 // Copyright (c) 2021 Trackingplan
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
 package com.trackingplan.client.adapter.transform_api;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.trackingplan.client.adapter.TrackingplanPlugin;
-import com.trackingplan.client.adapter.core.asm.AdapterClassVisitor;
 import com.trackingplan.client.adapter.core.TransformableChecker;
 import com.trackingplan.client.adapter.core.TransformationConfig;
 import com.trackingplan.client.adapter.core.TransformationConfigFactory;
+import com.trackingplan.client.adapter.core.asm.AdapterClassVisitor;
 import com.trackingplan.client.adapter.core.asm.TransformedAttribute;
 import com.trackingplan.client.adapter.core.exceptions.AlreadyTransformedException;
+import com.trackingplan.client.adapter.util.GradleLogger;
 
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -50,13 +30,13 @@ import java.util.zip.ZipOutputStream;
 
 final class AsmTransformer {
 
-    protected static final int ASM_API_VERSION = Opcodes.ASM9;
-    private static final Logger logger = TrackingplanPlugin.getLogger();
+    private static final int ASM_API_VERSION = Opcodes.ASM9;
+    private static final GradleLogger logger = TrackingplanPlugin.getLogger();
     private final TransformationConfig transformationConfig;
     private final ClassLoader classLoader;
 
     public AsmTransformer(ClassLoader classLoader) {
-        this.transformationConfig = (new TransformationConfigFactory()).newClassLoaderTransformationConfig(classLoader);
+        this.transformationConfig = (new TransformationConfigFactory()).newTransformationConfig(classLoader);
         this.classLoader = classLoader;
     }
 

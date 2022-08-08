@@ -1,13 +1,14 @@
+// Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.adapter.transform_api;
 
 import com.trackingplan.client.adapter.TrackingplanPlugin;
+import com.trackingplan.client.adapter.util.GradleLogger;
 
 import org.objectweb.asm.ClassWriter;
-import org.slf4j.Logger;
 
 final class AdapterClassWriter extends ClassWriter {
 
-    private static final Logger logger = TrackingplanPlugin.getLogger();
+    private static final GradleLogger logger = TrackingplanPlugin.getLogger();
 
     private final ClassLoader classLoader;
 
