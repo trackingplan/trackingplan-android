@@ -66,10 +66,9 @@ public class InstrumentRequestBuilder {
      */
     public void build() {
         try {
-
             if (tpInstance == null) {
                 // Use Log directly because at this point logger is not enabled
-                Log.w(LogWrapper.LOG_TAG, "Request ignored. Did you forget to initialize Trackingplan?");
+                Log.w(LogWrapper.LOG_TAG, "Request ignored. Looks like Trackingplan SDK is disabled. Did you forget to disable Trackingplan Adapter plugin?");
                 return;
             }
 

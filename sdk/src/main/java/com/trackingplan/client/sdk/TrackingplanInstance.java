@@ -60,11 +60,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
     private static volatile TrackingplanInstance instance;
 
-    @NonNull
     public static TrackingplanInstance getInstance() {
-        if (instance == null) {
-            throw new RuntimeException("Instance not registered during app startup");
-        }
         return instance;
     }
 
@@ -101,7 +97,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
         // Start Trackingplan thread. Intercepted requests will be routed through it
         handlerThread = new HandlerThread("Trackingplan");
-        handlerThread.start(); // TODO: Should I call .quit() later somewhere?
+        handlerThread.start();
 
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
         taskRunner = new TaskRunner(this.handler);
@@ -109,6 +105,11 @@ final public class TrackingplanInstance implements LifecycleObserver {
         requestQueue = new RequestQueue(this);
 
         lifecycle.addObserver(this);
+    }
+
+    public void stop() {
+        requestQueue.stop();
+        handlerThread.quitSafely();
     }
 
     public void setConfig(@NonNull TrackingplanConfig config) {
@@ -152,8 +153,8 @@ final public class TrackingplanInstance implements LifecycleObserver {
      *
      * @param task Task
      */
-    public void runSync(@NonNull Runnable task) {
-        this.handler.post(() -> {
+    public boolean runSync(@NonNull Runnable task) {
+        return this.handler.post(() -> {
             try {
                 task.run();
             } catch (Exception ex) {
@@ -182,7 +183,12 @@ final public class TrackingplanInstance implements LifecycleObserver {
     }
 
     /**
-     * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder
+     * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder.
+     * Note that a queue is used for intercepted requests so that they are grouped into batches
+     * before sending to Trackingplan. Regarding this, request are enqueued while the SDK isn't
+     * configured. So if it never gets configured the intercepted requests might end up filling all
+     * the memory available. To avoid this problem client code should call Trackingplan.stop(Context).
+     * to stop any interception.
      */
     public void processRequest(
             @NonNull final HttpRequest request,
@@ -209,12 +215,6 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
             refreshSessionDataAsync(this.config);
         }
-
-        /*
-        TODO: Request are enqueued while the SDK isn't configured. So if it never gets configured
-         the intercepted requests might end up filling all the memory available. Suspend interception
-         if no configuration is provided
-         */
 
         if (!shouldEnqueue) {
             logger.verbose("Request ignored. Tracking disabled");

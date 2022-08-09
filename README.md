@@ -5,6 +5,7 @@
 - [Trackingplan](#trackingplan)  
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
 - [Advanced options](#advanced-options)
+- [Disable Trackingplan](#disable-trackingplan)
 - [Building from source code](#building-from-source-code)
 - [Need help?](#need-help)
 - [Learn more](#learn-more)
@@ -31,12 +32,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.2.2` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.2.3` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.2.2"
+    classpath "com.trackingplan.client:adapter:1.2.3"
     // ...
 }
 ```
@@ -52,11 +53,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.2.2'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.2.3'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.2.2'
+    implementation 'com.trackingplan.client:sdk:1.2.3'
     // ...
 }
 ```
@@ -64,7 +65,7 @@ dependencies {
 Then in the `onCreate` method of your Application's Main Activity, set up the SDK like so:
 
 ```java
-Trackingplan.init("YOUR TRACKINGPLAN ID GOES HERE").start(this)
+Trackingplan.init("YOUR_TP_ID").start(this)
 ```
 
 And of course, import the SDK:
@@ -101,6 +102,40 @@ Trackingplan.init("YOUR_TP_ID")
 //  .dryRun()
     .start(this)
 ```
+
+## Disable Trackingplan
+
+To disable `Trackingplan for Android SDK` without removing it completely both the adapter plugin that works at compile time and the client that works at runtime must be disabled.
+
+### Disable the adapter plugin
+Add next line to your `gradle.properties` file:
+
+```groovy
+trackingplan.enableSdk=false
+```
+
+### Disable the client
+Replace the call to `Trackingplan.init("YOUR_TP_ID").start(this)` by the next one:
+
+```java
+Trackingplan.stop(this);
+```
+
+Alternatively, since `Trackingplan for Android SDK` uses [App Startup](https://developer.android.com/topic/libraries/app-startup) to perform its runtime initialization, the client can be disabled by adding the following to the `AndroidManifest.xml` of the app:
+
+```xml
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <meta-data
+        android:name="com.trackingplan.client.sdk.TrackingplanInitializer"
+        tools:node="remove" />
+</provider>
+```
+
+
 
 
 ## Building from source code

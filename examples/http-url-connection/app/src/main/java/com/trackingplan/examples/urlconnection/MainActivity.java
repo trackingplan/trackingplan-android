@@ -36,10 +36,11 @@ public class MainActivity extends AppCompatActivity {
                 // .environment("PRODUCTION")
                 // .sourceAlias("Android Example")
                 // .customDomains(customDomains)
-                // .ignoreContext()
                 .enableDebug()
                 .dryRun()
                 .start(this);
+
+        // Trackingplan.stop(this);
 
         new Thread(new RandomGaEventsGenerator()).start();
         // new Thread(new TestGaEvents()).start();

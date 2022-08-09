@@ -29,11 +29,17 @@ final class RequestQueue {
 
     private int lastBatchId = 0;
 
+    private boolean shuttingDown = false;
+
     public RequestQueue(TrackingplanInstance instance) {
         this.tpInstance = instance;
     }
 
     public void enqueueRequest(@NonNull HttpRequest request) {
+        if (shuttingDown) {
+            logger.verbose("Couldn't enqueue request because queue is stopped");
+            return;
+        }
         queue.add(request);
         logger.verbose("Request enqueued");
     }
@@ -57,6 +63,11 @@ final class RequestQueue {
      * NOTE: This method must be called from Trackingplan thread.
      */
     public void processQueue(float samplingRate, boolean forceSendBatch) {
+
+        if (shuttingDown) {
+            logger.debug("Process queue ignored. Queue is stopped");
+            return;
+        }
 
         if (!tpInstance.isConfigured()) {
             logger.debug("Process queue ignored. Configuration not provided");
@@ -132,8 +143,9 @@ final class RequestQueue {
     }
 
     private void stopWatchTimer(long batchId) {
-        if (!activeTimers.containsKey(batchId))
+        if (!activeTimers.containsKey(batchId)) {
             return;
+        }
         Runnable timer = activeTimers.get(batchId);
         if (timer != null) {
             tpInstance.cancelDelayedTask(timer);
@@ -157,7 +169,19 @@ final class RequestQueue {
         return batch;
     }
 
+    public void stop() {
+        shuttingDown = true;
+        stopAllTimers();
+        discardPendingRequests();
+    }
+
     public void discardPendingRequests() {
         queue.clear();
+    }
+
+    private void stopAllTimers() {
+        for (var timerId : activeTimers.keySet()) {
+            stopWatchTimer(timerId);
+        }
     }
 }

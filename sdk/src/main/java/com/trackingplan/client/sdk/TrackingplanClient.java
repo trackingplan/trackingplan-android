@@ -46,8 +46,13 @@ final public class TrackingplanClient {
 
         try (InputStream in = new BufferedInputStream(urlConnection.getInputStream())) {
             String rawConfig = StreamUtils.convertInputStreamToString(in);
-            JSONObject jsonObject = new JSONObject(rawConfig);
-            return (float) jsonObject.getDouble("sample_rate");
+            var jsonObject = new JSONObject(rawConfig);
+            float samplingRate = (float) jsonObject.getDouble("sample_rate");
+            var environmentRates = jsonObject.optJSONObject("environment_rates");
+            if (environmentRates != null) {
+                samplingRate = (float) environmentRates.optDouble(config.getEnvironment(), samplingRate);
+            }
+            return samplingRate;
         } finally {
             urlConnection.disconnect();
         }
