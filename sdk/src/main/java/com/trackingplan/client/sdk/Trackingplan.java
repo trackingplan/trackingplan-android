@@ -6,6 +6,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.LogWrapper;
 
@@ -22,19 +23,23 @@ final public class Trackingplan {
 
     @SuppressWarnings("unused")
     public static void stop(Context context) {
+
+        InstrumentRequestBuilder.setDisabled(true);
+
         try {
             var instance = TrackingplanInstance.getInstance();
-            if (instance == null) {
+            if (instance != null) {
+                instance.stop();
+                TrackingplanInstance.registerInstance(null);
+            } else {
                 logger.warn(LogWrapper.LOG_TAG, "Instance not registered during app startup");
-                return;
             }
-            instance.stop();
-            TrackingplanInstance.registerInstance(null);
-            logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled");
         } catch (Exception e) {
             // Use Log because AndroidLogger may not be enabled
-            Log.w(LogWrapper.LOG_TAG, "Trackingplan stop failed: " + e.getMessage());
+            Log.w(LogWrapper.LOG_TAG, "Stop instance failed: " + e.getMessage());
         }
+
+        logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled");
     }
 
     public static class ConfigInitializer {

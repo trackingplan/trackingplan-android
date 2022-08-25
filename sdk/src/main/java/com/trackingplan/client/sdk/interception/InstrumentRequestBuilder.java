@@ -12,9 +12,14 @@ import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.LogWrapper;
 
-public class InstrumentRequestBuilder {
+public abstract class InstrumentRequestBuilder {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static boolean disabled = false;
+
+    public static void setDisabled(boolean disabled) {
+        InstrumentRequestBuilder.disabled = disabled;
+    }
 
     final protected HttpRequest.Builder builder;
     final protected TrackingplanInstance tpInstance;
@@ -64,11 +69,16 @@ public class InstrumentRequestBuilder {
      * this method will be called from network thread of the consumer app whenever a request
      * is intercepted.
      */
-    public void build() {
+    public final void build() {
         try {
+
+            if (disabled) {
+                return;
+            }
+
             if (tpInstance == null) {
                 // Use Log directly because at this point logger is not enabled
-                Log.w(LogWrapper.LOG_TAG, "Request ignored. Looks like Trackingplan SDK is disabled. Did you forget to disable Trackingplan Adapter plugin?");
+                Log.w(LogWrapper.LOG_TAG, "Request ignored. Looks like Trackingplan SDK is disabled.");
                 return;
             }
 

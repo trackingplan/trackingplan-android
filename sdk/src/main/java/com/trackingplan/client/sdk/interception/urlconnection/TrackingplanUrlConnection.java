@@ -98,7 +98,7 @@ public class TrackingplanUrlConnection {
         return getContent(url, types, TrackingplanInstance.getInstance());
     }
 
-    static Object getContent(final URL url, TrackingplanInstance tpInstance) throws IOException {
+    private static Object getContent(final URL url, TrackingplanInstance tpInstance) throws IOException {
 
         InstrumentRequestBuilder builder = new HttpInstrumentRequestBuilder(tpInstance, "urlconnection");
         URLConnection connection = url.openConnection();
@@ -114,7 +114,7 @@ public class TrackingplanUrlConnection {
         return connection.getContent();
     }
 
-    static Object getContent(
+    private static Object getContent(
             final URL url,
             @SuppressWarnings("rawtypes") final Class[] types,
             TrackingplanInstance tpInstance)
