@@ -32,12 +32,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.2.3` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.2.4` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.2.3"
+    classpath "com.trackingplan.client:adapter:1.2.4"
     // ...
 }
 ```
@@ -53,11 +53,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.2.3'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.2.4'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.2.3'
+    implementation 'com.trackingplan.client:sdk:1.2.4'
     // ...
 }
 ```
@@ -105,16 +105,9 @@ Trackingplan.init("YOUR_TP_ID")
 
 ## Disable Trackingplan
 
-To disable `Trackingplan for Android SDK` without removing it completely both the adapter plugin that works at compile time and the client that works at runtime must be disabled.
+To disable `Trackingplan for Android SDK` the client that works at runtime must be disabled explictly.
 
-### Disable the adapter plugin
-Add next line to your `gradle.properties` file:
-
-```groovy
-trackingplan.enableSdk=false
-```
-
-### Disable the client
+### Disable the client (runtime)
 Replace the call to `Trackingplan.init("YOUR_TP_ID").start(this)` by the next one:
 
 ```java
@@ -134,6 +127,29 @@ Alternatively, since `Trackingplan for Android SDK` uses [App Startup](https://d
         tools:node="remove" />
 </provider>
 ```
+
+### (Optional) Disable the adapter plugin 
+Optionally, the adapter plugin that works at compile time can be disabled as well. This way no bytecode transformations are applied to your app.
+
+To disable the adapter plugin globally for your app, add the next line to your `gradle.properties` file:
+
+```groovy
+trackingplan.enableSdk=false
+```
+
+Alternatively, the adapter plugin can be disabled per build type. For instance, to have it disabled for your debug build, add the next lines to your `build.gradle` file inside your `android` section:
+
+```groovy
+buildTypes {
+    debug {
+        trackingplan {
+            enabled false
+        }
+    }
+}
+```
+
+
 
 
 
