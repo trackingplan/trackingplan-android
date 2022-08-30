@@ -20,7 +20,6 @@ import com.trackingplan.client.sdk.session.SessionData;
 import com.trackingplan.client.sdk.session.SessionDataStorage;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.TaskRunner;
-import com.trackingplan.client.sdk.util.URLUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -153,8 +152,8 @@ final public class TrackingplanInstance implements LifecycleObserver {
      *
      * @param task Task
      */
-    public boolean runSync(@NonNull Runnable task) {
-        return this.handler.post(() -> {
+    public void runSync(@NonNull Runnable task) {
+        this.handler.post(() -> {
             try {
                 task.run();
             } catch (Exception ex) {
@@ -223,17 +222,17 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
         try {
             // Note that initRequestContext depends on TrackingplanConfig#ignoreContext setting.
-            // For this reason, setting the context has been moved from the interception stage to
-            // the process stage (configuration is not available during interception).
+            // Since configuration is not available during interception, context initialization has
+            // been moved from the interception stage to the process stage.
             initRequestContext(request, interceptionContext);
 
-            // Note that initRequestProvider depends on TrackingplanConfig#customDomains setting.
+            // Note that initRequestDestination depends on TrackingplanConfig#customDomains setting.
             // For this reason, setting the provider of a request has been moved from the interception
             // stage to the process stage (configuration is not available during interception).
-            initRequestProvider(request);
+            initRequestDestination(request);
 
-            if (!hasSupportedProvider(request)) {
-                logger.verbose("Request ignored. Doesn't belong to a supported provider");
+            if (!isTargetedToSupportedDestination(request)) {
+                logger.verbose("Request ignored. Doesn't belong to a supported destination");
                 return;
             }
 
@@ -248,7 +247,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    boolean hasSupportedProvider(HttpRequest request) {
+    boolean isTargetedToSupportedDestination(HttpRequest request) {
         return !request.getProvider().isEmpty();
     }
 
@@ -321,19 +320,6 @@ final public class TrackingplanInstance implements LifecycleObserver {
         });
     }
 
-    private void initRequestProvider(HttpRequest request) {
-        var whitelist = Arrays.asList("okhttp", "urlconnection");
-
-        if (!whitelist.contains(request.getInterceptionModule())) {
-            return;
-        }
-
-        String provider = providers.get(URLUtils.getDomain(request.getUrl()));
-        if (provider != null) {
-            request.setProvider(provider);
-        }
-    }
-
     private void initRequestContext(HttpRequest request, InterceptionContext interceptionContext) {
         if (config.ignoreContext()) {
             return;
@@ -344,12 +330,29 @@ final public class TrackingplanInstance implements LifecycleObserver {
         }
     }
 
+    private void initRequestDestination(HttpRequest request) {
+
+        var whitelist = Arrays.asList("okhttp", "urlconnection");
+
+        if (!whitelist.contains(request.getInterceptionModule())) {
+            return;
+        }
+
+        for (String matchRule : providers.keySet()) {
+            if (!request.getUrl().contains(matchRule)) {
+                continue;
+            }
+            var provider = providers.get(matchRule);
+            if (provider != null) {
+                request.setProvider(provider);
+            }
+        }
+    }
+
     private Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
             put("google-analytics.com", "googleanalytics");
-            put("www.google-analytics.com", "googleanalytics");
             put("analytics.google.com", "googleanalytics");
-            put("ssl.google-analytics.com", "googleanalytics");
             put("api.segment.io", "segment");
             put("api.segment.com", "segment");
             put("api.intercom.io", "intercom");
@@ -360,7 +363,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");
             put("ct.pinterest.com", "pinterest");
-            // put("facebook.com/tr/", "facebook");
+            put("facebook.com/tr/", "facebook");
             put("px.ads.linkedin.com", "linkedin");
             put("bat.bing.com", "bing");
             put("pdst.fm", "podsights");
