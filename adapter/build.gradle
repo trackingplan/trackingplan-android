@@ -44,33 +44,45 @@ dependencies {
 
 
 publishing {
-    publications {
-        adapter(MavenPublication) {
-
-            pom {
-                name = "Trackingplan Android Adapter"
-                description = "Gradle plugin for Trackingplan Android SDK"
-                url = "https://www.trackingplan.com"
-                packaging = "jar"
-                licenses {
-                    license {
-                        name = "Copyright Trackingplan 2022 - All rights reserved"
+    // afterEvaluate is necessary because java-gradle-plugin
+    // creates its publications in an afterEvaluate callback
+    afterEvaluate {
+        publications {
+            withType(MavenPublication) {
+                pom {
+                    url = "https://www.trackingplan.com"
+                    licenses {
+                        license {
+                            name = "Copyright Trackingplan 2022 - All rights reserved"
+                        }
                     }
-                }
-                developers {
-                    developer {
-                        organization = "Trackingplan"
-                        organizationUrl = "https://www.trackingplan.com"
+                    developers {
+                        developer {
+                            organization = "Trackingplan"
+                            organizationUrl = "https://www.trackingplan.com"
+                        }
                     }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/trackingplan/trackingplan-android.git'
-                    developerConnection = 'scm:git:ssh://github.com/trackingplan/trackingplan-android.git'
-                    url = 'https://github.com/trackingplan/trackingplan-android/tree/main'
+                    scm {
+                        connection = 'scm:git:git://github.com/trackingplan/trackingplan-android.git'
+                        developerConnection = 'scm:git:ssh://github.com/trackingplan/trackingplan-android.git'
+                        url = 'https://github.com/trackingplan/trackingplan-android/tree/main'
+                    }
                 }
             }
-
-            from components.java
+            adapter(MavenPublication) {
+                pom {
+                    name = "Trackingplan Android Adapter"
+                    description = "Gradle plugin for Trackingplan Android SDK"
+                    packaging = "jar"
+                }
+                from components.java
+            }
+            TrackingplanAdapterPluginPluginMarkerMaven {
+                pom {
+                    name = "Trackingplan Android Adapter"
+                    description = "Gradle plugin for Trackingplan Android SDK"
+                }
+            }
         }
     }
     repositories {

@@ -18,11 +18,11 @@ task cleanBuildPublishLocal(type: GradleBuild) {
 }
 
 task buildPublishLocal(type: GradleBuild) {
-    tasks = ['build', 'publishAdapterPublicationToMavenLocal', 'publishSdkPublicationToMavenLocal']
+    tasks = ['build', 'publishAdapterPublicationToMavenLocal', 'publishSdkPublicationToMavenLocal', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToMavenLocal']
 }
 
 task cleanBuildPublishSonatype(type: GradleBuild) {
-    tasks = ['clean', 'build', 'publishAdapterPublicationToSonatypeRepository', 'publishSdkPublicationToSonatypeRepository']
+    tasks = ['clean', 'build', 'publishAdapterPublicationToSonatypeRepository', 'publishSdkPublicationToSonatypeRepository', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToSonatypeRepository']
 }
 
 // Load local.properties to ext
