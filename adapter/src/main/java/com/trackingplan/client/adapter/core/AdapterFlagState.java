@@ -5,17 +5,15 @@ import com.android.annotations.NonNull;
 import com.android.build.api.dsl.BuildType;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
-import com.android.builder.model.ProductFlavor;
 import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableMap;
 import com.trackingplan.client.adapter.TrackingplanExtension;
 import com.trackingplan.client.adapter.TrackingplanPlugin;
 
 import org.gradle.api.Project;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,19 +22,19 @@ final public class AdapterFlagState implements Serializable {
 
     private static final boolean ADAPTER_ENABLED_DEFAULT = true;
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private final Map<String, Optional<Boolean>> parsedProjectProperties;
+
     private final transient AppExtension androidExt;
 
     private final Map<String, Boolean> variantToInstrumentationEnabledMap = new HashMap<>();
 
     public AdapterFlagState(Project project) {
-        this.androidExt = project.getExtensions().getByType(AppExtension.class);
-        parsedProjectProperties = Map.of(
+        androidExt = project.getExtensions().getByType(AppExtension.class);
+        parsedProjectProperties = ImmutableMap.of(
                 TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY),
                 TrackingplanPlugin.TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY)
         );
-        androidExt.getApplicationVariants().all(this::updateInstrumentationEnabledFor);
+        androidExt.getApplicationVariants().all(variant -> updateInstrumentationEnabledFor(androidExt, variant));
     }
 
     public Optional<Boolean> getProjectPropertyValue(@NonNull String propertyKey) {
@@ -47,26 +45,20 @@ final public class AdapterFlagState implements Serializable {
         return this.variantToInstrumentationEnabledMap.getOrDefault(variant, ADAPTER_ENABLED_DEFAULT);
     }
 
-    public boolean isEnabledFor(String variant, String buildType, List<String> flavors) {
-        return this.instrumentationEnabledFor(variant, buildType, flavors);
+    public boolean isEnabledFor(String variant, String buildType) {
+        return this.instrumentationEnabledFor(androidExt, variant, buildType);
     }
 
     public Map<String, Boolean> getVariantToInstrumentationEnabledMap() {
         return this.variantToInstrumentationEnabledMap;
     }
 
-    private void updateInstrumentationEnabledFor(ApplicationVariant applicationVariant) {
+    private void updateInstrumentationEnabledFor(AppExtension extension, ApplicationVariant applicationVariant) {
         String variant = applicationVariant.getName();
-        List<String> productFlavors = new ArrayList<>();
-
-        for (ProductFlavor flavor : applicationVariant.getProductFlavors()) {
-            productFlavors.add(flavor.getName());
-        }
-
-        this.variantToInstrumentationEnabledMap.put(variant, this.instrumentationEnabledFor(variant, applicationVariant.getBuildType().getName(), productFlavors));
+        this.variantToInstrumentationEnabledMap.put(variant, this.instrumentationEnabledFor(extension, variant, applicationVariant.getBuildType().getName()));
     }
 
-    private boolean instrumentationEnabledFor(String variant, String buildType, List<String> flavors) {
+    private boolean instrumentationEnabledFor(AppExtension extension, String variant, String buildType) {
 
         var logger = TrackingplanPlugin.getLogger();
 
@@ -78,7 +70,7 @@ final public class AdapterFlagState implements Serializable {
             return tpGloballyEnabled.get();
         }
 
-        Optional<Boolean> parsedBuildTypeVal = getBuildTypeExtensionValue(buildType);
+        Optional<Boolean> parsedBuildTypeVal = getBuildTypeExtensionValue(extension, buildType);
 
         if (parsedBuildTypeVal.isPresent()) {
             var enabledStr = parsedBuildTypeVal.get() ? "enabled" : "disabled";
@@ -92,7 +84,7 @@ final public class AdapterFlagState implements Serializable {
         return ADAPTER_ENABLED_DEFAULT;
     }
 
-    private Optional<Boolean> readProjectPropertyValue(@NonNull Project project, @NonNull String propertyKey) {
+    private static Optional<Boolean> readProjectPropertyValue(@NonNull Project project, @NonNull String propertyKey) {
 
         if (!project.hasProperty(propertyKey)) {
             return Optional.empty();
@@ -105,13 +97,14 @@ final public class AdapterFlagState implements Serializable {
         var propVal = Objects.requireNonNull(project.property(propertyKey)).toString();
         Optional<Boolean> parsedPropVal = parseBoolean(propVal);
         if (parsedPropVal.isEmpty()) {
-            throw new IllegalStateException(String.format("Could not get unknown value '%s' for the project property '%s' defined in the 'gradle.properties' file. Correct format is either '%s=false' or '%s=true'.", propVal, propertyKey, propertyKey, propertyKey));        }
+            throw new IllegalStateException(String.format("Could not get unknown value '%s' for the project property '%s' defined in the 'gradle.properties' file. Correct format is either '%s=false' or '%s=true'.", propVal, propertyKey, propertyKey, propertyKey));
+        }
 
         return parsedPropVal;
     }
 
-    private Optional<Boolean> getBuildTypeExtensionValue(String buildType) {
-        BuildType dslBuildType = this.androidExt.getBuildTypes().getByName(buildType);
+    private static Optional<Boolean> getBuildTypeExtensionValue(AppExtension extension, String buildType) {
+        BuildType dslBuildType = extension.getBuildTypes().getByName(buildType);
         TrackingplanExtension buildTypeExt = dslBuildType.getExtensions().getByType(TrackingplanExtension.class);
         return buildTypeExt.getEnabled();
     }

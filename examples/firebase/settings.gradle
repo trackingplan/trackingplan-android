@@ -18,3 +18,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Firebase Analytics Example"
 include ':app'
+
+enableFeaturePreview "STABLE_CONFIGURATION_CACHE"

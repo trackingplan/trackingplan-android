@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 public class TrackingplanTransform extends Transform {
 
     private static final GradleLogger logger = TrackingplanPlugin.getLogger();
+
     private final Set<ContentType> typeClasses;
     private final Set<Scope> scopes;
     private AsmTransformer trackingplanInstrumentation;
@@ -80,8 +81,7 @@ public class TrackingplanTransform extends Transform {
     @Override
     public boolean applyToVariant(VariantInfo variant) {
         this.applyToVariantUsed = true;
-        boolean enabled = this.adapterFlagState.isEnabledFor(variant.getFullVariantName(), variant.getBuildTypeName(),
-                variant.getFlavorNames());
+        boolean enabled = this.adapterFlagState.isEnabledFor(variant.getFullVariantName(), variant.getBuildTypeName());
         logger.debug(String.format("applyToVariant(%s): %s", variant, enabled));
         return enabled;
     }
@@ -100,8 +100,8 @@ public class TrackingplanTransform extends Transform {
         String variantName = invocation.getContext().getVariantName();
         boolean instrumentationEnabled = this.applyToVariantUsed || this.adapterFlagState.isEnabledFor(variantName);
         logger.debug("Executing transform for buildVariant: {}; instrumentationEnabled: {}, applyToVariantUsed: {}",
-                new Object[] { invocation.getContext().getVariantName(), instrumentationEnabled,
-                        this.applyToVariantUsed });
+                invocation.getContext().getVariantName(), instrumentationEnabled,
+                this.applyToVariantUsed);
 
         List<URL> runtimeCP = this.buildRuntimeClasspath(transformInputs, referencedInputs);
         logger.debug("Effective app classpath at runtime:");
@@ -126,7 +126,7 @@ public class TrackingplanTransform extends Transform {
     }
 
     private void transformDirectoryInputs(TransformInput transformInput, TransformOutputProvider outputProvider,
-            boolean incremental, boolean instrumentationEnabled) throws IOException {
+                                          boolean incremental, boolean instrumentationEnabled) throws IOException {
         for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
             File inputDir = directoryInput.getFile();
             File outputDir = outputProvider.getContentLocation(directoryInput.getName(),
@@ -141,7 +141,7 @@ public class TrackingplanTransform extends Transform {
     }
 
     private void performTransformationForDirectoryInput(DirectoryInput directoryInput, File inputDir, File outputDir,
-            boolean incremental) throws IOException {
+                                                        boolean incremental) throws IOException {
 
         if (!incremental) {
             for (File inputFile : FileUtilsWrapper.getAllFiles(inputDir)) {
@@ -188,7 +188,7 @@ public class TrackingplanTransform extends Transform {
     }
 
     private void transformJarInputs(TransformInput transformInput, TransformOutputProvider outputProvider,
-            boolean incremental, boolean instrumentationEnabled) throws IOException {
+                                    boolean incremental, boolean instrumentationEnabled) throws IOException {
         for (JarInput jarInput : transformInput.getJarInputs()) {
             File inputJar = jarInput.getFile();
             File outputJar = outputProvider.getContentLocation(jarInput.getName(), jarInput.getContentTypes(),
@@ -233,7 +233,7 @@ public class TrackingplanTransform extends Transform {
     private void performDummyTransformationForJarInput(File inputJar, File outputJar) throws IOException {
         Files.createParentDirs(outputJar);
         try (FileInputStream fis = new FileInputStream(inputJar);
-                FileOutputStream fos = new FileOutputStream(outputJar)) {
+             FileOutputStream fos = new FileOutputStream(outputJar)) {
             IOUtils.copy(fis, fos);
         }
     }
@@ -243,8 +243,7 @@ public class TrackingplanTransform extends Transform {
     }
 
     private List<URL> buildRuntimeClasspath(Collection<TransformInput> transformInputs,
-            Collection<TransformInput> referencedInputs) {
-
+                                            Collection<TransformInput> referencedInputs) {
         List<File> classPaths = new ArrayList<>(this.bootClasspathProvider.get());
 
         for (Collection<TransformInput> inputs : Arrays.asList(transformInputs, referencedInputs)) {

@@ -79,9 +79,7 @@ public class TrackingplanPlugin implements Plugin<Project> {
     }
 
     private void registerExtension(AppExtension androidExt) {
-        androidExt.getBuildTypes().all(buildType -> {
-            buildType.getExtensions().add(TP_EXTENSION_NAME, TrackingplanExtension.class);
-        });
+        androidExt.getBuildTypes().all(buildType -> buildType.getExtensions().add(TP_EXTENSION_NAME, TrackingplanExtension.class));
     }
 
     public static GradleLogger getLogger() {
