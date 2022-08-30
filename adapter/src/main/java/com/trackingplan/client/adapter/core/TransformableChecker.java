@@ -11,6 +11,7 @@ final public class TransformableChecker {
                 && !name.startsWith("com/google/protobuf/")
                 && !name.startsWith("com/google/android/apps/common/proguard/")
                 && !name.startsWith("com/google/android/datatransport/")
+                && !name.startsWith("com/google/android/exoplayer2/")
                 && !name.startsWith("com/google/common")
                 && !name.startsWith("okhttp3/")
                 && !name.startsWith("okio/")
