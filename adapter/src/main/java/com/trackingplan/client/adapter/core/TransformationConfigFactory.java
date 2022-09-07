@@ -7,6 +7,8 @@ import com.trackingplan.client.adapter.core.asm.MethodVisitorTransformationConfi
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsLogEventIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetAnalyticsCollectionEnabledIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetDefaultEventParametersIC;
+import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserIdIC;
+import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserPropertyIC;
 import com.trackingplan.client.adapter.core.asm.config.OkHttpClientCallEnqueueIC;
 import com.trackingplan.client.adapter.core.asm.config.OkHttpClientCallExecuteIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionGetContentClassIC;
@@ -30,8 +32,10 @@ public class TransformationConfigFactory {
             new OkHttpClientCallExecuteIC(),
             new OkHttpClientCallEnqueueIC(),
             new FirebaseAnalyticsLogEventIC(),
+            new FirebaseAnalyticsSetAnalyticsCollectionEnabledIC(),
             new FirebaseAnalyticsSetDefaultEventParametersIC(),
-            new FirebaseAnalyticsSetAnalyticsCollectionEnabledIC()
+            new FirebaseAnalyticsSetUserIdIC(),
+            new FirebaseAnalyticsSetUserPropertyIC()
     );
 
     public ClassLoaderTransformationConfig newTransformationConfig(ClassLoader classLoader) {

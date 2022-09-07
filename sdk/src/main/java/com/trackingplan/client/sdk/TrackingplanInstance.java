@@ -367,7 +367,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
             put("px.ads.linkedin.com", "linkedin");
             put("bat.bing.com", "bing");
             put("pdst.fm", "podsights");
-            put("firebaseinstallations.googleapis.com", "firebase");
+            // put("firebaseinstallations.googleapis.com", "firebase");
             put("quantserve.com", "quantserve");
             put("sb.scorecardresearch.com", "scorecardresearch");
         }};

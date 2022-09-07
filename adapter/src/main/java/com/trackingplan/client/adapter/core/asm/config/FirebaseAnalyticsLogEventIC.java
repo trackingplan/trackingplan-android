@@ -6,20 +6,9 @@ import com.trackingplan.client.adapter.core.asm.transformations.FirebaseAnalytic
 
 public class FirebaseAnalyticsLogEventIC extends MethodVisitorTransformationConfig {
 
-    private static final String CLASS_NAME;
-    private static final String METHOD_NAME;
-    private static final String METHOD_DESC;
-
-    static {
-        try {
-            // TODO: Add FirebaseAnalytics dependency to get data
-            CLASS_NAME = "com/google/firebase/analytics/FirebaseAnalytics";
-            METHOD_NAME = "logEvent";
-            METHOD_DESC = "(Ljava/lang/String;Landroid/os/Bundle;)V";
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+    private static final String CLASS_NAME = "com/google/firebase/analytics/FirebaseAnalytics";
+    private static final String METHOD_NAME = "logEvent";
+    private static final String METHOD_DESC = "(Ljava/lang/String;Landroid/os/Bundle;)V";
 
     public FirebaseAnalyticsLogEventIC() {
         super(new FirebaseAnalyticsLogEventTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);

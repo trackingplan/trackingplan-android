@@ -71,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
 
             mFirebase.setDefaultEventParameters(makeDefaultEventParams());
+            mFirebase.setUserId("test1");
+            mFirebase.setUserProperty("country", "spain");
 
             selectProductFromList();
             viewProductDetails();

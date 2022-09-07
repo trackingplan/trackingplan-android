@@ -91,6 +91,7 @@ final public class TrackingplanClient {
 
     private void sendTracks(byte[] payload) throws IOException {
 
+        // TODO: Compress rawTracks before sending
         HttpURLConnection conn = makeNewTracksConnection();
 
         try {

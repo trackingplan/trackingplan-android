@@ -5,7 +5,12 @@ import com.trackingplan.client.adapter.core.asm.MethodVisitorTransformationConfi
 import com.trackingplan.client.adapter.core.asm.transformations.OkHttpClientCallEnqueueTransformation;
 
 public class OkHttpClientCallEnqueueIC extends MethodVisitorTransformationConfig {
+
+    private static final String CLASS_NAME = "okhttp3/Call";
+    private static final String METHOD_NAME = "enqueue";
+    private static final String METHOD_DESC = "(Lokhttp3/Callback;)V";
+
     public OkHttpClientCallEnqueueIC() {
-        super(new OkHttpClientCallEnqueueTransformation.Factory(), "okhttp3/Call", "enqueue", "(Lokhttp3/Callback;)V");
+        super(new OkHttpClientCallEnqueueTransformation.Factory(), CLASS_NAME, METHOD_NAME, METHOD_DESC);
     }
 }
