@@ -1,11 +1,14 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk.interception.firebase;
 
+import android.app.Activity;
 import android.os.Bundle;
 
 import androidx.annotation.Keep;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.Size;
 
 import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
@@ -40,21 +43,32 @@ final public class FirebaseAnalytics {
         interceptMethodCall(fa, "setDefaultEventParameters", methodParams);
     }
 
+    @MainThread
     @Keep
-    public static void setUserProperty(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa, @NonNull String name, String value) {
-        fa.setUserProperty(name, value);
-        var params = new Bundle();
-        params.putString("name", name);
-        params.putString("value", value);
-        interceptMethodCall(fa, "setUserProperty", params);
+    public static void setCurrentScreen(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa, @NonNull Activity activity, @Nullable @Size(min = 1L, max = 36L) String screenName, @Nullable @Size(min = 1L, max = 36L) String screenClassOverride) {
+        fa.setCurrentScreen(activity, screenName, screenClassOverride);
+        var methodParams = new Bundle();
+        methodParams.putString("activity", activity.getLocalClassName());
+        methodParams.putString("screenName", screenName);
+        methodParams.putString("screenClassOverride", screenClassOverride);
+        interceptMethodCall(fa, "setCurrentScreen", methodParams);
     }
 
     @Keep
     public static void setUserId(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa, @NonNull String id) {
         fa.setUserId(id);
-        var params = new Bundle();
-        params.putString("id", id);
-        interceptMethodCall(fa, "setUserId", params);
+        var methodParams = new Bundle();
+        methodParams.putString("id", id);
+        interceptMethodCall(fa, "setUserId", methodParams);
+    }
+
+    @Keep
+    public static void setUserProperty(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa, @NonNull String name, String value) {
+        fa.setUserProperty(name, value);
+        var methodParams = new Bundle();
+        methodParams.putString("name", name);
+        methodParams.putString("value", value);
+        interceptMethodCall(fa, "setUserProperty", methodParams);
     }
 
     @Keep
@@ -105,7 +119,6 @@ final public class FirebaseAnalytics {
         payload.put("method", name);
         payload.put("params", params);
         payload.put("ts_millis", System.currentTimeMillis());
-
 
         return payload;
     }

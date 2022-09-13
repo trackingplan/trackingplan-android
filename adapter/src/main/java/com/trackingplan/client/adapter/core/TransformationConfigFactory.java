@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.trackingplan.client.adapter.core.asm.MethodVisitorTransformationConfig;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsLogEventIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetAnalyticsCollectionEnabledIC;
+import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetCurrentScreenIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetDefaultEventParametersIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserIdIC;
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserPropertyIC;
@@ -33,6 +34,7 @@ public class TransformationConfigFactory {
             new OkHttpClientCallEnqueueIC(),
             new FirebaseAnalyticsLogEventIC(),
             new FirebaseAnalyticsSetAnalyticsCollectionEnabledIC(),
+            new FirebaseAnalyticsSetCurrentScreenIC(),
             new FirebaseAnalyticsSetDefaultEventParametersIC(),
             new FirebaseAnalyticsSetUserIdIC(),
             new FirebaseAnalyticsSetUserPropertyIC()

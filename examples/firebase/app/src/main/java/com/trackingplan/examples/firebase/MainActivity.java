@@ -1,5 +1,6 @@
 package com.trackingplan.examples.firebase;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
 
@@ -29,21 +30,23 @@ public class MainActivity extends AppCompatActivity {
 
         if (triggerFirebaseEvents) {
             var fa = FirebaseAnalytics.getInstance(this);
-            new TriggerFirebaseEvents(fa).run();
+            new TriggerFirebaseEvents(fa, this).run();
         }
     }
 
     public static class TriggerFirebaseEvents implements Runnable {
 
         final private FirebaseAnalytics mFirebase;
+        final private Activity mContext;
 
         private final Bundle itemJeggings = new Bundle();
         private final Bundle itemBoots = new Bundle();
         private final Bundle itemSocks = new Bundle();
 
-        public TriggerFirebaseEvents(FirebaseAnalytics firebase) {
+        public TriggerFirebaseEvents(FirebaseAnalytics firebase, Activity context) {
 
             mFirebase = firebase;
+            mContext = context;
 
             itemJeggings.putString(FirebaseAnalytics.Param.ITEM_ID, "SKU_123");
             itemJeggings.putString(FirebaseAnalytics.Param.ITEM_NAME, "jeggings");
@@ -73,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             mFirebase.setDefaultEventParameters(makeDefaultEventParams());
             mFirebase.setUserId("test1");
             mFirebase.setUserProperty("country", "spain");
+            mFirebase.setCurrentScreen(mContext, "MainActivity", "something");
 
             selectProductFromList();
             viewProductDetails();
