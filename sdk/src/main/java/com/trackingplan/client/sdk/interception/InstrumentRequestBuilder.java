@@ -43,7 +43,8 @@ public abstract class InstrumentRequestBuilder {
         builder.setUserAgent(userAgent);
     }
 
-    public void addHeaderField(String key, String value) {
+    public void addHeaderField(String key, String value, boolean overwrite) {
+        if (!overwrite && builder.hasHeaderField(key)) return;
         builder.addHeaderField(key, value);
     }
 

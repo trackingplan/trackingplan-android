@@ -88,6 +88,18 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
+        public ConfigInitializer tracksEndPoint(@NonNull String endPoint) {
+            configBuilder.tracksEndPoint(endPoint);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public ConfigInitializer configEndPoint(@NonNull String endPoint) {
+            configBuilder.configEndPoint(endPoint);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public void start(Context context) {
             try {
                 var instance = TrackingplanInstance.getInstance();

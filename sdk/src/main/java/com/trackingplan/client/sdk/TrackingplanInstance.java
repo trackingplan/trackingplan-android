@@ -351,25 +351,30 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
     private Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
-            put("google-analytics.com", "googleanalytics");
-            put("analytics.google.com", "googleanalytics");
-            put("api.segment.io", "segment");
-            put("api.segment.com", "segment");
-            put("api.intercom.io", "intercom");
             put("api.amplitude.com", "amplitude");
             put("api2.amplitude.com", "amplitude");
+            // Disabled as payloads intercepted by urlconnection are encrypted
+            // put("inapps.appsflyer.com/api/v", "appsflyer");
+            // put("launches.appsflyer.com/api/v", "appsflyer");
+            put("bat.bing.com", "bing");
             put("ping.chartbeat.net", "chartbeat");
-            put("api.mixpanel.com", "mixpanel");
+            put("track-sdk-eu.customer.io/api", "customerio"); // Europe Region
+            put("track-sdk.customer.io/api", "customerio"); // USA Region
+            put("facebook.com/tr/", "facebook");
+            // put("firebaseinstallations.googleapis.com", "firebase");
+            put("google-analytics.com", "googleanalytics");
+            put("analytics.google.com", "googleanalytics");
+            put("api.intercom.io", "intercom");
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");
-            put("ct.pinterest.com", "pinterest");
-            put("facebook.com/tr/", "facebook");
             put("px.ads.linkedin.com", "linkedin");
-            put("bat.bing.com", "bing");
+            put("api.mixpanel.com", "mixpanel");
+            put("ct.pinterest.com", "pinterest");
             put("pdst.fm", "podsights");
-            // put("firebaseinstallations.googleapis.com", "firebase");
             put("quantserve.com", "quantserve");
             put("sb.scorecardresearch.com", "scorecardresearch");
+            put("api.segment.io", "segment");
+            put("api.segment.com", "segment");
         }};
     }
 

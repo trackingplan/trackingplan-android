@@ -24,6 +24,7 @@ import java.util.zip.GZIPInputStream;
 final public class TrackBuilder {
 
     private static final String HEADER_CONTENT_ENCODING = "content-encoding";
+    private static final String HEADER_CONTENT_TYPE = "content-type";
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
@@ -105,11 +106,15 @@ final public class TrackBuilder {
             return;
         }
 
-        String contentEncoding = request.getHeaders().get(HEADER_CONTENT_ENCODING);
+        var contentEncoding = request.getHeaders().get(HEADER_CONTENT_ENCODING);
+        var contentType = request.getHeaders().get(HEADER_CONTENT_TYPE);
 
         if (!StringUtils.isEmpty(contentEncoding) || isGzipCompressed(payload)) {
             requestJson.put("post_payload", bytesTob64(payload));
             requestJson.put("post_payload_type", "gzip_base64");
+        } else if ("application/octet-stream".equals(contentType)) {
+            requestJson.put("post_payload", bytesTob64(payload));
+            requestJson.put("post_payload_type", "base64");
         } else {
             requestJson.put("post_payload", bytesToUtf8(payload));
         }
@@ -124,8 +129,7 @@ final public class TrackBuilder {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    private boolean isGzipCompressed(byte[] bytes)
-    {
+    private boolean isGzipCompressed(byte[] bytes) {
         if ((bytes == null) || (bytes.length < 2)) {
             return false;
         } else {

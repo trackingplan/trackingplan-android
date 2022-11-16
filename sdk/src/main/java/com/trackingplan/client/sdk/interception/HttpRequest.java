@@ -200,6 +200,10 @@ final public class HttpRequest {
             return this;
         }
 
+        public boolean hasHeaderField(String key) {
+            return request.headers.containsKey(key);
+        }
+
         public Builder setProvider(@NonNull String provider) {
             request.provider = provider;
             return this;

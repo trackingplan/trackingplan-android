@@ -27,8 +27,6 @@ final public class TrackingplanClient {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-    public static final String TRACKS_END_POINT = "https://tracks.trackingplan.com/v1/";
-    private static final String CONFIG_END_POINT = "https://config.trackingplan.com/";
     private static final int TRACKS_CONNECT_TIMEOUT = 30 * 1000;
 
     private final TrackingplanConfig config;
@@ -41,7 +39,7 @@ final public class TrackingplanClient {
 
     public float getSamplingRate() throws IOException, JSONException {
 
-        URL url = new URL(CONFIG_END_POINT + "config-" + config.getTpId() + ".json");
+        URL url = new URL(config.getConfigEndPoint() + "config-" + config.getTpId() + ".json");
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
         try (InputStream in = new BufferedInputStream(urlConnection.getInputStream())) {
@@ -92,7 +90,7 @@ final public class TrackingplanClient {
     private void sendTracks(byte[] payload) throws IOException {
 
         // TODO: Compress rawTracks before sending
-        HttpURLConnection conn = makeNewTracksConnection();
+        HttpURLConnection conn = makeNewTracksConnection(config.getTracksEndPoint() + config.getTpId());
 
         try {
             try (OutputStream out = conn.getOutputStream()) {
@@ -104,7 +102,7 @@ final public class TrackingplanClient {
             // parsed correctly. Otherwise it will return a != 204 code.
             int responseCode = conn.getResponseCode();
 
-            logger.verbose("Client: Raw tracks sent. Response code " + responseCode);
+            logger.verbose("Raw tracks sent. Response code " + responseCode);
 
         } catch (SocketTimeoutException ex) {
             throw new TrackingplanSendException("Connection to tracks timed out", ex);
@@ -113,9 +111,9 @@ final public class TrackingplanClient {
         }
     }
 
-    private HttpURLConnection makeNewTracksConnection() throws IOException {
-        URL tracksEndPoint = new URL(TRACKS_END_POINT);
-        HttpURLConnection conn = (HttpURLConnection) tracksEndPoint.openConnection();
+    private HttpURLConnection makeNewTracksConnection(@NonNull String tracksEndPoint) throws IOException {
+        URL tracksEndPointURL = new URL(tracksEndPoint);
+        HttpURLConnection conn = (HttpURLConnection) tracksEndPointURL.openConnection();
         conn.setConnectTimeout(TRACKS_CONNECT_TIMEOUT);
         conn.setDoOutput(true);
         conn.setRequestMethod("POST");

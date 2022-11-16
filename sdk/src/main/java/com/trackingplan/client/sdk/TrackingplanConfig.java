@@ -28,6 +28,9 @@ final public class TrackingplanConfig {
     private boolean debug;
     private boolean dryRun;
 
+    private String tracksEndPoint;
+    private String configEndPoint;
+
     private TrackingplanConfig() {
         this.tpId = "";
         this.environment = "PRODUCTION";
@@ -35,6 +38,8 @@ final public class TrackingplanConfig {
         this.sourceAlias = "android";
         this.debug = false;
         this.dryRun = false;
+        this.tracksEndPoint = "https://tracks.trackingplan.com/v1/";
+        this.configEndPoint = "https://config.trackingplan.com/";
     }
 
     private TrackingplanConfig(String tpId) {
@@ -71,6 +76,16 @@ final public class TrackingplanConfig {
     @NonNull
     public Map<String, String> customDomains() {
         return Collections.unmodifiableMap(customDomains);
+    }
+
+    @NonNull
+    public String getTracksEndPoint() {
+        return tracksEndPoint;
+    }
+
+    @NonNull
+    public String getConfigEndPoint() {
+        return configEndPoint;
     }
 
     @Override
@@ -141,6 +156,14 @@ final public class TrackingplanConfig {
             config.customDomains.putAll(customDomains);
         }
 
+        public void tracksEndPoint(@NonNull String tracksEndPoint) {
+            config.tracksEndPoint = endPointInput(tracksEndPoint);
+        }
+
+        public void configEndPoint(@NonNull String configEndPoint) {
+            config.configEndPoint = endPointInput(configEndPoint);
+        }
+
         @NonNull
         public TrackingplanConfig build() {
 
@@ -153,6 +176,13 @@ final public class TrackingplanConfig {
 
             reset();
             return result;
+        }
+
+        private String endPointInput(@NonNull String endPoint) {
+            if (!endPoint.endsWith("/")) {
+                return endPoint + "/";
+            }
+            return endPoint;
         }
 
         private void reset() {

@@ -227,6 +227,7 @@ final class InstrURLConnectionBase {
     }
 
     public void addRequestProperty(final String key, final String value) {
+        requestBuilder.addHeaderField(key, value, false);
         httpUrlConnection.addRequestProperty(key, value);
     }
 
@@ -348,7 +349,7 @@ final class InstrURLConnectionBase {
         if (USER_AGENT_PROPERTY.equalsIgnoreCase(key)) {
             requestBuilder.setUserAgent(value);
         }
-        requestBuilder.addHeaderField(key, value);
+        requestBuilder.addHeaderField(key, value, true);
         httpUrlConnection.setRequestProperty(key, value);
     }
 
