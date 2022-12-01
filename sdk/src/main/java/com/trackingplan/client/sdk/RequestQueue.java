@@ -7,11 +7,10 @@ import com.trackingplan.client.sdk.delivery.TaskRunnerBatchSender;
 import com.trackingplan.client.sdk.interception.HttpRequest;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 final class RequestQueue {
 
@@ -25,36 +24,35 @@ final class RequestQueue {
 
     private final TrackingplanInstance tpInstance;
 
-    private final Map<Long, Runnable> activeTimers = new HashMap<>();
-
     private int lastBatchId = 0;
 
     private boolean shuttingDown = false;
+    private Runnable watcher = null;
 
     public RequestQueue(TrackingplanInstance instance) {
-        this.tpInstance = instance;
+        tpInstance = instance;
     }
 
-    public void enqueueRequest(@NonNull HttpRequest request) {
+    public void queueRequest(@NonNull HttpRequest request) {
         if (shuttingDown) {
-            logger.verbose("Couldn't enqueue request because queue is stopped");
+            logger.verbose("Couldn't queue request because queue is stopped");
             return;
         }
         queue.add(request);
-        logger.verbose("Request enqueued");
+        logger.debug("Request queued: " + request);
     }
 
     /**
-     * @see RequestQueue#processQueue(float, boolean)
+     * @see RequestQueue#processQueue(float, boolean, Runnable)
      */
     public void processQueue(float samplingRate) {
-        processQueue(samplingRate, false);
+        processQueue(samplingRate, false, null);
     }
 
     /**
      * Process the queue of intercepted requests and send them to Trackingplan in batches
      * of MAX_NUM_REQUESTS_IN_BATCH requests. More than one batch can be scheduled as a result
-     * of processing the queue.
+     * of processing the queue but full batches are enforced.
      * <p>
      * In order for a batch to be scheduled, there must be enough requests to make the batch full.
      * When forceSendBatch is true and there are no enough requests in the queue to complete a batch,
@@ -62,20 +60,23 @@ final class RequestQueue {
      * <p>
      * NOTE: This method must be called from Trackingplan thread.
      */
-    public void processQueue(float samplingRate, boolean forceSendBatch) {
+    void processQueue(float samplingRate, boolean forceSendBatch, Runnable callback) {
 
         if (shuttingDown) {
             logger.debug("Process queue ignored. Queue is stopped");
+            if (callback != null) callback.run();
             return;
         }
 
         if (!tpInstance.isConfigured()) {
             logger.debug("Process queue ignored. Configuration not provided");
+            if (callback != null) callback.run();
             return;
         }
 
         if (queue.isEmpty()) {
             logger.debug("Process queue ignored. Queue is empty");
+            if (callback != null) callback.run();
             return;
         }
 
@@ -85,20 +86,26 @@ final class RequestQueue {
         // after initialization the queue may have more than MAX_NUM_REQUESTS_IN_BATCH
         // requests. In that case, processQueue has to prepare and schedule more than one batch.
 
-        int numBatchesToSend = queue.size() / MAX_NUM_REQUESTS_IN_BATCH;
-        int numOrphanRequests = queue.size() % MAX_NUM_REQUESTS_IN_BATCH;
+        final int numBatchesToSend = getNumBatchesToSend(forceSendBatch);
+        final AtomicInteger batchesSentCounter = new AtomicInteger(0);
 
-        if (forceSendBatch && numOrphanRequests > 0) {
-            numBatchesToSend += 1;
+        // Stop watcher because a new batch will be sent.
+        if (numBatchesToSend > 0) {
+            stopWatcher();
         }
 
+        // Prepare batch and send
         for (int i = 0; i < numBatchesToSend; i++) {
             final List<HttpRequest> batch = takeElements(queue);
-            stopWatchTimer(lastBatchId);
-
-            // this.batchSender = new WorkManagerBatchSender(tpInstance.getConfig(), tpInstance.getContext());
             final var batchSender = new TaskRunnerBatchSender(tpInstance.getClient(), tpInstance.getTaskRunner());
-            batchSender.send(batch, samplingRate, lastBatchId);
+            batchSender.send(batch, samplingRate, lastBatchId, () -> {
+                // Note: This callback is executed in Trackingplan thread
+                int numBatchesSent = batchesSentCounter.addAndGet(1);
+                if (numBatchesSent == numBatchesToSend) {
+                    logger.info("Queue flushed (" + numBatchesSent + " batches)");
+                    if (callback != null) callback.run();
+                }
+            });
             logger.info("Queue processed (" + batch.size() + " requests). Batch " + lastBatchId + " scheduled for sending");
 
             lastBatchId = (lastBatchId + 1) % 10000;
@@ -109,49 +116,49 @@ final class RequestQueue {
             // calls to this method, these requests will never be sent. Set a timer to forcibly
             // send all these requests if BATCH_TIMEOUT_MS have passed and no batch was sent in
             // between.
-            logger.verbose("Queue not full yet (" + numOrphanRequests + " requests).");
-            startWatchTimer(lastBatchId, samplingRate);
+            logger.verbose("Queue not full yet (" + queue.size() + " requests).");
+            startWatcher(samplingRate);
         }
+    }
+
+    private int getNumBatchesToSend(boolean forceSendBatch) {
+        int numBatchesToSend = queue.size() / MAX_NUM_REQUESTS_IN_BATCH;
+        int numOrphanRequests = queue.size() % MAX_NUM_REQUESTS_IN_BATCH;
+        if (forceSendBatch && numOrphanRequests > 0) {
+            numBatchesToSend += 1;
+        }
+        return numBatchesToSend;
     }
 
     /**
-     * Sets a timer that calls processQueue after BATCH_TIMEOUT_MS when no batch was sent in between.
+     * Sets a watcher that calls processQueue after BATCH_TIMEOUT_MS.
      * <p>
-     * If a timer already existed for a batch, no watcher is started and the deadline of the previous
+     * If a watcher already existed, no watcher is started and the deadline of the previous
      * one is not changed.
      */
-    private void startWatchTimer(long batchId, float samplingRate) {
+    private void startWatcher(float samplingRate) {
 
-        if (activeTimers.containsKey(batchId)) {
+        if (watcher != null) {
+            logger.verbose("Watcher is already started");
             return;
         }
 
-        logger.verbose("Start watcher " + batchId);
+        logger.debug("Watcher started");
 
-        Runnable timer = tpInstance.runSyncDelayed(BATCH_TIMEOUT_MS, () -> {
-            activeTimers.remove(batchId);
-            if (batchId == this.lastBatchId) {
-                logger.debug("Watcher " + batchId + " timed out. Forcing a queue processing...");
-                processQueue(samplingRate, true);
-            } else {
-                logger.debug("Watcher " + batchId + " timed out. Nothing to do here (" + queue.size()
-                        + " requests in queue)");
-            }
+        watcher = tpInstance.runSyncDelayed(BATCH_TIMEOUT_MS, () -> {
+            watcher = null;
+            logger.debug("Watcher timed out. Forcing the processing of the queue...");
+            processQueue(samplingRate, true, null);
         });
-
-        activeTimers.put(batchId, timer);
     }
 
-    private void stopWatchTimer(long batchId) {
-        if (!activeTimers.containsKey(batchId)) {
+    private void stopWatcher() {
+        if (watcher == null) {
+            logger.verbose("Watcher is already stopped");
             return;
         }
-        Runnable timer = activeTimers.get(batchId);
-        if (timer != null) {
-            tpInstance.cancelDelayedTask(timer);
-        }
-        activeTimers.remove(batchId);
-        logger.debug("Watcher " + batchId + " stopped");
+        tpInstance.cancelDelayedTask(watcher);
+        logger.debug("Watcher stopped");
     }
 
     /**
@@ -169,19 +176,16 @@ final class RequestQueue {
         return batch;
     }
 
+    public void start() {
+        shuttingDown = false;
+    }
+
     public void stop() {
         shuttingDown = true;
-        stopAllTimers();
+        stopWatcher();
         discardPendingRequests();
     }
-
     public void discardPendingRequests() {
         queue.clear();
-    }
-
-    private void stopAllTimers() {
-        for (var timerId : activeTimers.keySet()) {
-            stopWatchTimer(timerId);
-        }
     }
 }

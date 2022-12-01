@@ -7,11 +7,12 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.SystemClock;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.core.os.HandlerCompat;
+import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.OnLifecycleEvent;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.trackingplan.client.sdk.interception.HttpRequest;
 import com.trackingplan.client.sdk.interception.InterceptionContext;
@@ -24,6 +25,8 @@ import com.trackingplan.client.sdk.util.TaskRunner;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Trackingplan singleton instance.
@@ -51,9 +54,9 @@ import java.util.Map;
  * thread using {@link TaskRunner}, our async task executor. Note that the task's callbacks invoked
  * upon finalization of the task are executed also in Trackingplan thread.
  */
-final public class TrackingplanInstance implements LifecycleObserver {
+final public class TrackingplanInstance {
 
-    private static final long FETCH_CONFIG_RETRY_INTERVAL_MS = 5 * 60 * 1000; // TODO: Change to 5 min
+    private static final long FETCH_CONFIG_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
@@ -63,12 +66,12 @@ final public class TrackingplanInstance implements LifecycleObserver {
         return instance;
     }
 
-    public static void registerInstance(TrackingplanInstance instance) {
+    static void registerInstance(TrackingplanInstance instance) {
         TrackingplanInstance.instance = instance;
     }
 
-    private final TaskRunner taskRunner;
-    private final HandlerThread handlerThread; // TODO: Research how it affects performance. Research a non-blocking implementation
+    private TaskRunner taskRunner;
+    private final HandlerThread handlerThread;
     private final Handler handler;
 
     private final Map<String, String> providers;
@@ -86,32 +89,47 @@ final public class TrackingplanInstance implements LifecycleObserver {
     // processRequest will work again when current time >= suspendedUntilMs
     private long suspendedUntilMs = 0;
 
-    public TrackingplanInstance(final Context context, final Lifecycle lifecycle) {
+    private final MyLifeCycleObserver lifeCycleObserver;
+    private Lifecycle lifeCycle;
 
+    @MainThread
+    TrackingplanInstance(@NonNull final Context context) {
         checkRunningInMainThread();
-
         this.context = context.getApplicationContext();
-        config = TrackingplanConfig.emptyConfig;
+        lifeCycleObserver = new MyLifeCycleObserver();
         providers = makeDefaultProviders();
-
+        config = TrackingplanConfig.emptyConfig;
+        requestQueue = new RequestQueue(this);
         // Start Trackingplan thread. Intercepted requests will be routed through it
         handlerThread = new HandlerThread("Trackingplan");
         handlerThread.start();
-
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
-        taskRunner = new TaskRunner(this.handler);
-
-        requestQueue = new RequestQueue(this);
-
-        lifecycle.addObserver(this);
     }
 
-    public void stop() {
-        requestQueue.stop();
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
         handlerThread.quitSafely();
+        if (lifeCycle != null) {
+            lifeCycle.removeObserver(lifeCycleObserver);
+        }
+        logger.verbose("TrackingplanInstance destroyed");
     }
 
-    public void setConfig(@NonNull TrackingplanConfig config) {
+    public void attachToLifeCycle(@NonNull final Lifecycle lifecycle) {
+        if (lifeCycle != null) {
+            lifeCycle.removeObserver(lifeCycleObserver);
+        }
+        lifecycle.addObserver(lifeCycleObserver);
+        this.lifeCycle = lifecycle;
+    }
+
+    void stop() {
+        requestQueue.stop();
+        this.config = TrackingplanConfig.emptyConfig;
+    }
+
+    void setConfig(@NonNull TrackingplanConfig config) {
 
         if (config.equals(TrackingplanConfig.emptyConfig)) {
             throw new RuntimeException("Empty config");
@@ -119,9 +137,13 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
         this.config = config;
 
+        requestQueue.start();
+
         providers.clear();
         providers.putAll(makeDefaultProviders());
         providers.putAll(config.customDomains());
+
+        taskRunner = new TaskRunner(this.handler);
 
         client = new TrackingplanClient(config);
 
@@ -139,11 +161,11 @@ final public class TrackingplanInstance implements LifecycleObserver {
         return context;
     }
 
-    public TrackingplanClient getClient() {
+    TrackingplanClient getClient() {
         return client;
     }
 
-    public TaskRunner getTaskRunner() {
+    TaskRunner getTaskRunner() {
         return taskRunner;
     }
 
@@ -162,7 +184,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
         });
     }
 
-    public Runnable runSyncDelayed(long delayMillis, @NonNull Runnable task) {
+    Runnable runSyncDelayed(long delayMillis, @NonNull Runnable task) {
 
         final Runnable wrapper = () -> {
             try {
@@ -177,7 +199,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
         return wrapper;
     }
 
-    public void cancelDelayedTask(@NonNull Runnable callback) {
+    void cancelDelayedTask(@NonNull Runnable callback) {
         this.handler.removeCallbacks(callback);
     }
 
@@ -202,7 +224,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
 
         boolean isConfigured = isConfigured();
         boolean sessionExpired = SessionDataStorage.hasExpired(currentSessionData);
-        boolean shouldEnqueue = !isConfigured || sessionExpired || currentSessionData.isTrackingEnabled();
+        boolean shouldQueue = !isConfigured || sessionExpired || currentSessionData.isTrackingEnabled();
 
         if (isConfigured && sessionExpired && !downloadingSessionData) {
 
@@ -215,7 +237,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
             refreshSessionDataAsync(this.config);
         }
 
-        if (!shouldEnqueue) {
+        if (!shouldQueue) {
             logger.verbose("Request ignored. Tracking disabled");
             return;
         }
@@ -236,7 +258,7 @@ final public class TrackingplanInstance implements LifecycleObserver {
                 return;
             }
 
-            requestQueue.enqueueRequest(request);
+            requestQueue.queueRequest(request);
 
             if (isConfigured && !sessionExpired && currentSessionData.isTrackingEnabled()) {
                 requestQueue.processQueue(currentSessionData.getSamplingRate());
@@ -246,24 +268,39 @@ final public class TrackingplanInstance implements LifecycleObserver {
         }
     }
 
+    void flushQueue() {
+        flushQueue(10000);
+    }
+
+    private void flushQueue(long timeout) {
+        final CountDownLatch lock = new CountDownLatch(1);
+        runSync(() -> {
+            if (!isConfigured() || SessionDataStorage.hasExpired(currentSessionData) || !currentSessionData.isTrackingEnabled()) {
+                logger.info("Processing queue ignored because of missing information");
+                lock.countDown();
+                return;
+            }
+            requestQueue.processQueue(currentSessionData.getSamplingRate(), true, lock::countDown);
+        });
+        try {
+            if (Thread.currentThread() != handlerThread) {
+                var counterReachedZero = lock.await(timeout, TimeUnit.MILLISECONDS);
+                if (!counterReachedZero) {
+                    logger.debug("Queue flushing took longer than 10 seconds (timeout)");
+                }
+            }
+        } catch (InterruptedException e) {
+            logger.debug("Current thread interrupted while waiting for queue flushing");
+        }
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isTargetedToSupportedDestination(HttpRequest request) {
         return !request.getProvider().isEmpty();
     }
 
-    public boolean isConfigured() {
-        return config != TrackingplanConfig.emptyConfig;
-    }
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
-    private void processQueue() {
-
-        if (!isConfigured() || SessionDataStorage.hasExpired(currentSessionData) || !currentSessionData.isTrackingEnabled()) {
-            return;
-        }
-
-        logger.info("Processing all queue before going to background");
-        requestQueue.processQueue(currentSessionData.getSamplingRate(), true);
+    boolean isConfigured() {
+        return config != null && !TrackingplanConfig.emptyConfig.equals(config);
     }
 
     private void startSession(SessionData sessionData) {
@@ -386,5 +423,15 @@ final public class TrackingplanInstance implements LifecycleObserver {
     private void checkRunningInMainThread() {
         if (Thread.currentThread() == Looper.getMainLooper().getThread()) return;
         throw new IllegalThreadStateException("Method must be called from UI main thread");
+    }
+
+    private class MyLifeCycleObserver implements DefaultLifecycleObserver {
+        @Override
+        public void onStop(@NonNull LifecycleOwner owner) {
+            DefaultLifecycleObserver.super.onStop(owner);
+            logger.info("Processing queue before going to background");
+            // Do not wait as this is called from MainThread
+            flushQueue(0);
+        }
     }
 }

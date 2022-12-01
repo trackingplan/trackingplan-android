@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "Trackingplan Android Client"
 include ':adapter'
 include ':sdk'
+include ':junit-tools'

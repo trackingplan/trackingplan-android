@@ -124,13 +124,6 @@ final public class HttpRequest {
     @Override
     @NonNull
     public String toString() {
-
-        String payloadStr = "Empty";
-
-        if (payloadSizeBytes > 0) {
-            payloadStr = new String(payloadData, StandardCharsets.UTF_8);
-        }
-
         return "HttpRequest{" +
                 "method='" + method + '\'' +
                 ", failed='" + (hasError ? "Yes" : "No") + '\'' +
@@ -142,7 +135,6 @@ final public class HttpRequest {
                 ", created_at='" + createdTimeMs + '\'' +
                 ", context='" + context.toString() + '\'' +
                 ", headers='" + headers.toString() + '\'' +
-                ", payload='" + payloadStr + '\'' +
                 '}';
     }
 

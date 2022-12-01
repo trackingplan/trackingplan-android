@@ -27,13 +27,16 @@ final public class TaskRunnerBatchSender implements BatchSender {
     }
 
     @Override
-    public void send(@NonNull List<HttpRequest> batch, float samplingRate, long batchId) {
+    public void send(@NonNull List<HttpRequest> batch, float samplingRate, long batchId, Runnable callback) {
         SendBatchTask task = new SendBatchTask(batch, client, samplingRate);
         taskRunner.executeTask(task, (batchResult, error) -> {
             if (error == null) {
                 logger.info(batchResult.numRequestsSent + " raw tracks of batch " + batchId + " sent to Trackingplan (" + batchResult.numFailedRequests + " failed)");
             } else {
                 logger.warn("Send failed and batch " + batchId + " will be discarded: " + error.getMessage());
+            }
+            if (callback != null) {
+                callback.run();
             }
         });
     }

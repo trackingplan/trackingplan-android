@@ -92,7 +92,7 @@ public abstract class InstrumentRequestBuilder {
                 beforeBuild();
 
                 HttpRequest request = builder.build();
-                logger.debug("Request intercepted: " + request);
+                logger.verbose("Request intercepted: " + request);
 
                 if (!shouldProcessRequest(request)) {
                     return;

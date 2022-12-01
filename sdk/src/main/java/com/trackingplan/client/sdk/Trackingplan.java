@@ -5,6 +5,7 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
 import com.trackingplan.client.sdk.util.AndroidLogger;
@@ -22,7 +23,16 @@ final public class Trackingplan {
     }
 
     @SuppressWarnings("unused")
-    public static void stop(Context context) {
+    public static void stop() {
+        stop(true);
+    }
+
+    @VisibleForTesting
+    public static void clearInitState() {
+        stop(false);
+    }
+
+    private static void stop(boolean unregisterInstance) {
 
         InstrumentRequestBuilder.setDisabled(true);
 
@@ -30,7 +40,9 @@ final public class Trackingplan {
             var instance = TrackingplanInstance.getInstance();
             if (instance != null) {
                 instance.stop();
-                TrackingplanInstance.registerInstance(null);
+                if (unregisterInstance) {
+                    TrackingplanInstance.registerInstance(null);
+                }
             } else {
                 logger.warn(LogWrapper.LOG_TAG, "Instance not registered during app startup");
             }
@@ -39,7 +51,23 @@ final public class Trackingplan {
             Log.w(LogWrapper.LOG_TAG, "Stop instance failed: " + e.getMessage());
         }
 
-        logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled");
+        if (unregisterInstance) {
+            logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled. To enable it again remove the stop() call and restart the app.");
+        } else {
+            logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " stopped. To start it again use Trackingplan.init(string).start()");
+        }
+    }
+
+    /**
+     * Flush the queue of intercepted requests. This is a blocking operation and it should be
+     * mainly used for testing purposes.
+     */
+    @VisibleForTesting()
+    public static void flushQueue() {
+        var instance = TrackingplanInstance.getInstance();
+        if (instance != null) {
+            instance.flushQueue();
+        }
     }
 
     public static class ConfigInitializer {
@@ -99,13 +127,21 @@ final public class Trackingplan {
             return this;
         }
 
-        @SuppressWarnings("unused")
-        public void start(Context context) {
+        public void start(Context ignoredContext) {
             try {
                 var instance = TrackingplanInstance.getInstance();
+
                 if (instance == null) {
                     throw new RuntimeException("Instance not registered during app startup");
                 }
+
+                if (instance.isConfigured()) {
+                    logger.info("Trackingplan is already initialized. Start ignored");
+                    return;
+                }
+
+                // Enable instrument in case SDK was stopped before
+                InstrumentRequestBuilder.setDisabled(false);
 
                 TrackingplanConfig config = configBuilder.build();
 
