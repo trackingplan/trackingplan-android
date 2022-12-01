@@ -1,14 +1,19 @@
 package com.trackingplan.examples.urlconnection;
 
+import static org.junit.Assert.assertEquals;
+
 import android.content.Context;
 
-import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.adevinta.android.barista.rule.cleardata.ClearPreferencesRule;
+import com.trackingplan.client.junit.TrackingplanJUnitRule;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -17,10 +22,27 @@ import static org.junit.Assert.*;
  */
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
+
+    // Clear all app's SharedPreferences
+    @Rule
+    public ClearPreferencesRule clearPreferencesRule = new ClearPreferencesRule();
+
+    @Rule
+    public TrackingplanJUnitRule trackingplanRule = new TrackingplanJUnitRule("YOUR_TP_ID", "testing");
+
     @Test
-    public void useAppContext() {
-        // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.urlconnectionappexample", appContext.getPackageName());
+    public void testMainActivity() {
+        try (ActivityScenario<MainActivity> ignored = ActivityScenario.launch(MainActivity.class)) {
+            Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+            assertEquals("com.trackingplan.examples.urlconnection", appContext.getPackageName());
+        }
+    }
+
+    @Test
+    public void testSecondaryActivity() {
+        try (ActivityScenario<MainActivity2> ignored = ActivityScenario.launch(MainActivity2.class)) {
+            Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+            assertEquals("com.trackingplan.examples.urlconnection", appContext.getPackageName());
+        }
     }
 }
