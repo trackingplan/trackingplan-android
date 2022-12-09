@@ -6,6 +6,7 @@
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
+- [Trackingplan for QA](#trackingplan-for-qa)
 - [Building from source code](#building-from-source-code)
 - [Need help?](#need-help)
 - [Learn more](#learn-more)
@@ -24,7 +25,7 @@ Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.co
 
 ## Add Trackingplan to your Android app
 
-The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 21 (Lollipop) or later.
+The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 24 (Nougat) or later.
 
 First, add the Trackingplan dependency using Android Studio, like so:
 
@@ -149,10 +150,35 @@ buildTypes {
 }
 ```
 
+## Trackingplan for QA
+
+Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
+
+1. Add `com.trackingplan.client:junit-tools:1.3.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
+
+```gradle
+dependencies {
+    // ...
+    androidTestImplementation "com.trackingplan.client:junit-tools:1.3.0"
+    // ...
+}
+```
+
+2. Import the `TrackingplanJUnitRule`:
+
+```java
+import com.trackingplan.client.junit.TrackingplanJUnitRule;
+```
+
+3. In each JUnit file, add the imported rule to your instrumented test code:
+
+```java
+@Rule
+public TrackingplanJUnitRule trackingplanRule = new TrackingplanJUnitRule("YOUR_TP_ID", "YOUR_TESTING_ENVIRONMENT");
+```
 
 
-
-
+The `TrackingplanJUnitRule` will initialize the SDK before each test is executed. And it will ensure that all the collected data is sent to Trackingplan after every test execution. Note that this rule will overwrite any existing initialization of Trackingplan SDK for Android in your app.
 
 ## Building from source code
 
