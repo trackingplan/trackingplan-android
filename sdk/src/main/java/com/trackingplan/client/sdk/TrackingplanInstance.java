@@ -145,7 +145,7 @@ final public class TrackingplanInstance {
 
         taskRunner = new TaskRunner(this.handler);
 
-        client = new TrackingplanClient(config);
+        client = new TrackingplanClient(config, context);
 
         SessionData sessionData = SessionDataStorage.load(config.getTpId(), context);
         if (!SessionDataStorage.hasExpired(sessionData)) {
@@ -283,7 +283,7 @@ final public class TrackingplanInstance {
             requestQueue.processQueue(currentSessionData.getSamplingRate(), true, lock::countDown);
         });
         try {
-            if (Thread.currentThread() != handlerThread) {
+            if (Thread.currentThread() != handlerThread && timeout > 0) {
                 var counterReachedZero = lock.await(timeout, TimeUnit.MILLISECONDS);
                 if (!counterReachedZero) {
                     logger.debug("Queue flushing took longer than 10 seconds (timeout)");

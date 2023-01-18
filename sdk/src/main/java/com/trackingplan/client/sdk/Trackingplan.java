@@ -116,6 +116,12 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
+        public ConfigInitializer tags(@NonNull Map<String, String> tags) {
+            configBuilder.tags(tags);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
         public ConfigInitializer tracksEndPoint(@NonNull String endPoint) {
             configBuilder.tracksEndPoint(endPoint);
             return this;

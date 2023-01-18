@@ -23,6 +23,7 @@ final public class TrackingplanConfig {
     private String environment;
     private String sourceAlias;
     private final Map<String, String> customDomains = new HashMap<>();
+    private final Map<String, String> tags = new HashMap<>();
 
     private boolean ignoreContext;
     private boolean debug;
@@ -79,6 +80,11 @@ final public class TrackingplanConfig {
     }
 
     @NonNull
+    public Map<String, String> tags() {
+        return Collections.unmodifiableMap(tags);
+    }
+
+    @NonNull
     public String getTracksEndPoint() {
         return tracksEndPoint;
     }
@@ -106,18 +112,22 @@ final public class TrackingplanConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TrackingplanConfig that = (TrackingplanConfig) o;
-        return ignoreContext == that.ignoreContext
+        return configEndPoint.equals(that.configEndPoint)
+                && customDomains.equals(that.customDomains)
                 && debug == that.debug
                 && dryRun == that.dryRun
-                && tpId.equals(that.tpId)
                 && environment.equals(that.environment)
-                && sourceAlias.equals(that.sourceAlias)
-                && customDomains.equals(that.customDomains);
+                && ignoreContext == that.ignoreContext
+                && tags.equals(that.tags)
+                && tpId.equals(that.tpId)
+                && tracksEndPoint.equals(that.tracksEndPoint)
+                && sourceAlias.equals(that.sourceAlias);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tpId, environment, sourceAlias, customDomains, ignoreContext, debug, dryRun);
+        return Objects.hash(configEndPoint, customDomains, debug, dryRun, environment, ignoreContext,
+                tags, tpId, tracksEndPoint, sourceAlias);
     }
 
     static class Builder {
@@ -154,6 +164,11 @@ final public class TrackingplanConfig {
         public void customDomains(@NonNull Map<String, String> customDomains) {
             config.customDomains.clear();
             config.customDomains.putAll(customDomains);
+        }
+
+        public void tags(@NonNull Map<String, String> tags) {
+            config.tags.clear();
+            config.tags.putAll(tags);
         }
 
         public void tracksEndPoint(@NonNull String tracksEndPoint) {

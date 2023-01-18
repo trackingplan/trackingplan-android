@@ -25,7 +25,7 @@ Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.co
 
 ## Add Trackingplan to your Android app
 
-The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 24 (Nougat) or later.
+The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 24 (Lollipop) or later.
 
 First, add the Trackingplan dependency using Android Studio, like so:
 
@@ -33,12 +33,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.3.0` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.4.0` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.3.0"
+    classpath "com.trackingplan.client:adapter:1.4.0"
     // ...
 }
 ```
@@ -54,11 +54,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.3.0'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.4.0'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.3.0'
+    implementation 'com.trackingplan.client:sdk:1.4.0'
     // ...
 }
 ```
@@ -84,11 +84,13 @@ Trackingplan for Android supports the following `advanced options` during its in
 
 | Parameter | Description | Default |
 | ----------|-------------|---------------|
-| `environment(value)` | Allows to isolate the data between production and testing environments. | `PRODUCTION` |
-| `sourceAlias(value)` | Allows to differentiate between sources. | `android` |
-| `customDomains(map)` | Allows to extend the list of monitored domains. Any request made to these domains will also be forwarded to Trackingplan. The `map argument` must be a `key-value` with the domain to be looked for and the alias you want to use for that analytics domain. | `empty map`            |
 | `enableDebug()`         | Enables debug mode. Prints debug information in the console. | `disabled` | 
+| `environment(value)` | Allows to isolate the data between production and testing environments. | `PRODUCTION` |
 | `dryRun()` | Enables dry run mode. Do not send intercepted requests to Trackingplan. | `disabled` |
+| `customDomains(map)` | Allows to extend the list of monitored domains. Any request made to these domains will also be forwarded to Trackingplan. The `map argument` must be a `key-value` with the domain to be looked for and the alias you want to use for that analytics domain. | `empty map`            |
+| `sourceAlias(value)` | Allows to differentiate between sources. | `android` |
+| `tags(map)`          | Allows to tag the data sent to Trackingplan. The `map argument` must be a `key-value` with the tag name and the tag value. | `empty map`
+
 
 ### Example
 
@@ -96,9 +98,12 @@ Trackingplan for Android supports the following `advanced options` during its in
 Trackingplan.init("YOUR_TP_ID")
     .environment("development")
     .sourceAlias("my_application")
-    .customDomains(new HashMap<>(){{
-        put("my.domain.com", "myanalytics");
-    }})
+//  .tags(new HashMap<>(){{
+//      put("tag1", "value1");
+//  }})
+//  .customDomains(new HashMap<>(){{
+//      put("my.domain.com", "myanalytics");
+//  }})
 //  .enableDebug()
 //  .dryRun()
     .start(this)
@@ -154,12 +159,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.3.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:1.4.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
 
 ```gradle
 dependencies {
     // ...
-    androidTestImplementation "com.trackingplan.client:junit-tools:1.3.0"
+    androidTestImplementation "com.trackingplan.client:junit-tools:1.4.0"
     // ...
 }
 ```

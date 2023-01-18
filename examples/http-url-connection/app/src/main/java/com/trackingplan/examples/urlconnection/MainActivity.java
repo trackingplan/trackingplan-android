@@ -18,7 +18,8 @@ public class MainActivity extends AppCompatActivity {
         Trackingplan.init("YOUR_TP_ID")
                 // .environment("PRODUCTION")
                 // .sourceAlias("Android Example")
-                // .customDomains(customDomains)
+                // .tags(YOUR_TAGS)
+                // .customDomains(YOUR_CUSTOM_DOMAINS)
                 .enableDebug()
                 .dryRun()
                 .start(this);

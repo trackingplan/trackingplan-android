@@ -1,6 +1,8 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.delivery.TrackBuilder;
@@ -32,9 +34,9 @@ final public class TrackingplanClient {
     private final TrackingplanConfig config;
     private final TrackBuilder builder;
 
-    public TrackingplanClient(@NonNull TrackingplanConfig config) {
+    public TrackingplanClient(@NonNull TrackingplanConfig config, @NonNull final Context context) {
         this.config = config;
-        this.builder = new TrackBuilder(config);
+        this.builder = new TrackBuilder(config, context);
     }
 
     public float getSamplingRate() throws IOException, JSONException {

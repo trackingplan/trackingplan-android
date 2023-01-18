@@ -1,6 +1,9 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk.delivery;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Base64;
 
@@ -29,9 +32,11 @@ final public class TrackBuilder {
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
     private final TrackingplanConfig config;
+    private final String appVersion;
 
-    public TrackBuilder(@NonNull TrackingplanConfig config) {
+    public TrackBuilder(@NonNull TrackingplanConfig config, @NonNull final Context context) {
         this.config = config;
+        this.appVersion = getAppVersion(context);
     }
 
     public JSONArray createJsonPayload(List<HttpRequest> requests, float samplingRate) throws JSONException {
@@ -43,7 +48,7 @@ final public class TrackBuilder {
                 payload.put(createRawTrack(request, samplingRate));
             } catch (JSONException e) {
                 logger.warn("Cannot convert request to raw track: " + e.getMessage());
-                logger.info("Request information: " + request.toString());
+                logger.info("Request information: " + request);
             }
         }
 
@@ -59,11 +64,15 @@ final public class TrackBuilder {
         String device = Build.MANUFACTURER + " " + Build.MODEL;
         String platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
 
-        JSONObject rawTrack = new JSONObject();
+        var rawTrack = new JSONObject();
 
         rawTrack.put("provider", request.getProvider());
 
-        JSONObject requestJson = new JSONObject();
+        if (config.tags().size() > 0) {
+            rawTrack.put("tags", getTagsAsJson(config.tags()));
+        }
+
+        var requestJson = new JSONObject();
         rawTrack.put("request", requestJson);
         requestJson.put("endpoint", request.getUrl());
         requestJson.put("method", request.getMethod());
@@ -71,20 +80,20 @@ final public class TrackBuilder {
 
         requestJson.put("response_code", request.getResponseCode());
 
-        JSONObject context = new JSONObject();
+        var context = new JSONObject();
+        rawTrack.put("context", context);
+
+        // Always include app_version in the context even when context should be ignored as
+        // core features rely on this field.
+        context.put("app_version", appVersion);
 
         if (!config.ignoreContext()) {
-            // TODO: App name
-            // TODO: App version
-            // TODO: App instance id
             context.put("device", device);
             context.put("platform", platform);
             for (Map.Entry<String, String> entry : request.getContext().entrySet()) {
                 context.put(entry.getKey(), entry.getValue());
             }
         }
-
-        rawTrack.put("context", context);
 
         rawTrack.put("tp_id", config.getTpId());
         rawTrack.put("source_alias", config.getSourceAlias());
@@ -95,6 +104,25 @@ final public class TrackBuilder {
         rawTrack.put("sampling_rate", samplingRate);
 
         return rawTrack;
+    }
+
+    private static JSONObject getTagsAsJson(Map<String, String> tags) throws JSONException {
+        var tagsJson = new JSONObject();
+
+        for (var tag : tags.entrySet()) {
+            tagsJson.put(tag.getKey(), tag.getValue());
+        }
+
+        return tagsJson;
+    }
+    
+    private @NonNull String getAppVersion(Context context) {
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            return pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            return "Unknown";
+        }
     }
 
     private void parsePayload(HttpRequest request, JSONObject requestJson) throws JSONException {
