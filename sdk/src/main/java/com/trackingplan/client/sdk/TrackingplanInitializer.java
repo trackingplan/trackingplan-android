@@ -23,7 +23,7 @@ public class TrackingplanInitializer implements Initializer<TrackingplanInstance
 
         var instance = new TrackingplanInstance(context.getApplicationContext());
         instance.attachToLifeCycle(ProcessLifecycleOwner.get().getLifecycle());
-
+        
         TrackingplanInstance.registerInstance(instance);
 
         logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " initialized");

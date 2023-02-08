@@ -24,10 +24,12 @@ final public class TrackingplanConfig {
     private String sourceAlias;
     private final Map<String, String> customDomains = new HashMap<>();
     private final Map<String, String> tags = new HashMap<>();
+    private final Map<String, String> customContext = new HashMap<>();
 
     private boolean ignoreContext;
     private boolean debug;
     private boolean dryRun;
+    private boolean backgroundObserver;
 
     private String tracksEndPoint;
     private String configEndPoint;
@@ -39,6 +41,7 @@ final public class TrackingplanConfig {
         this.sourceAlias = "android";
         this.debug = false;
         this.dryRun = false;
+        this.backgroundObserver = true;
         this.tracksEndPoint = "https://tracks.trackingplan.com/v1/";
         this.configEndPoint = "https://config.trackingplan.com/";
     }
@@ -51,6 +54,10 @@ final public class TrackingplanConfig {
     @NonNull
     public String getTpId() {
         return tpId;
+    }
+
+    public boolean isBackgroundObserverEnabled() {
+        return backgroundObserver;
     }
 
     public boolean isDebugEnabled() {
@@ -72,6 +79,11 @@ final public class TrackingplanConfig {
     @NonNull
     public String getEnvironment() {
         return environment;
+    }
+
+    @NonNull
+    public Map<String, String> customContext() {
+        return Collections.unmodifiableMap(customContext);
     }
 
     @NonNull
@@ -112,7 +124,9 @@ final public class TrackingplanConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TrackingplanConfig that = (TrackingplanConfig) o;
-        return configEndPoint.equals(that.configEndPoint)
+        return backgroundObserver == that.backgroundObserver
+                && configEndPoint.equals(that.configEndPoint)
+                && customContext.equals(that.customContext)
                 && customDomains.equals(that.customDomains)
                 && debug == that.debug
                 && dryRun == that.dryRun
@@ -126,8 +140,8 @@ final public class TrackingplanConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(configEndPoint, customDomains, debug, dryRun, environment, ignoreContext,
-                tags, tpId, tracksEndPoint, sourceAlias);
+        return Objects.hash(backgroundObserver, configEndPoint, customContext, customDomains,
+                debug, dryRun, environment, ignoreContext, tags, tpId, tracksEndPoint, sourceAlias);
     }
 
     static class Builder {
@@ -141,29 +155,42 @@ final public class TrackingplanConfig {
             config = new TrackingplanConfig(tpId);
         }
 
-        public void enableDebug() {
-            config.debug = true;
+        public void configEndPoint(@NonNull String configEndPoint) {
+            config.configEndPoint = endPointInput(configEndPoint);
         }
 
-        public void ignoreContext() {
-            config.ignoreContext = true;
+        public void customContext(@NonNull Map<String, String> context) {
+            config.customContext.clear();
+            config.customContext.putAll(context);
+        }
+
+        public void customDomains(@NonNull Map<String, String> customDomains) {
+            config.customDomains.clear();
+            config.customDomains.putAll(customDomains);
+        }
+
+        public void enableDebug() {
+            config.debug = true;
         }
 
         public void enableDryRun() {
             config.dryRun = true;
         }
 
-        public void sourceAlias(@NonNull String alias) {
-            config.sourceAlias = alias;
-        }
-
         public void environment(@NonNull String environment) {
             config.environment = environment;
         }
 
-        public void customDomains(@NonNull Map<String, String> customDomains) {
-            config.customDomains.clear();
-            config.customDomains.putAll(customDomains);
+        public void disableBackgroundObserver() {
+            config.backgroundObserver = false;
+        }
+
+        public void ignoreContext() {
+            config.ignoreContext = true;
+        }
+
+        public void sourceAlias(@NonNull String alias) {
+            config.sourceAlias = alias;
         }
 
         public void tags(@NonNull Map<String, String> tags) {
@@ -173,10 +200,6 @@ final public class TrackingplanConfig {
 
         public void tracksEndPoint(@NonNull String tracksEndPoint) {
             config.tracksEndPoint = endPointInput(tracksEndPoint);
-        }
-
-        public void configEndPoint(@NonNull String configEndPoint) {
-            config.configEndPoint = endPointInput(configEndPoint);
         }
 
         @NonNull

@@ -66,19 +66,22 @@ final public class TrackBuilder {
 
         var rawTrack = new JSONObject();
 
+        rawTrack.put("tp_id", config.getTpId());
+        rawTrack.put("environment", config.getEnvironment());
         rawTrack.put("provider", request.getProvider());
-
-        if (config.tags().size() > 0) {
-            rawTrack.put("tags", getTagsAsJson(config.tags()));
-        }
 
         var requestJson = new JSONObject();
         rawTrack.put("request", requestJson);
         requestJson.put("endpoint", request.getUrl());
         requestJson.put("method", request.getMethod());
         parsePayload(request, requestJson);
-
         requestJson.put("response_code", request.getResponseCode());
+
+        rawTrack.put("source_alias", config.getSourceAlias());
+
+        if (config.tags().size() > 0) {
+            rawTrack.put("tags", getTagsAsJson(config.tags()));
+        }
 
         var context = new JSONObject();
         rawTrack.put("context", context);
@@ -87,21 +90,22 @@ final public class TrackBuilder {
         // core features rely on this field.
         context.put("app_version", appVersion);
 
+        // Context established by unit tests
+        for (var entry : config.customContext().entrySet()) {
+            context.put(entry.getKey(), entry.getValue());
+        }
+
         if (!config.ignoreContext()) {
             context.put("device", device);
             context.put("platform", platform);
-            for (Map.Entry<String, String> entry : request.getContext().entrySet()) {
+            for (var entry : request.getContext().entrySet()) {
                 context.put(entry.getKey(), entry.getValue());
             }
         }
 
-        rawTrack.put("tp_id", config.getTpId());
-        rawTrack.put("source_alias", config.getSourceAlias());
-        rawTrack.put("environment", config.getEnvironment());
+        rawTrack.put("sampling_rate", samplingRate);
         rawTrack.put("sdk", "android");
         rawTrack.put("sdk_version", BuildConfig.SDK_VERSION);
-
-        rawTrack.put("sampling_rate", samplingRate);
 
         return rawTrack;
     }

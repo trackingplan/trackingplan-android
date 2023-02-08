@@ -6,7 +6,7 @@ plugins {
 }
 
 ext {
-    TrackingplanVersion = '1.2.0-SNAPSHOT'
+    TrackingplanVersion = '1.4.0-SNAPSHOT'
 }
 
 task clean(type: Delete) {

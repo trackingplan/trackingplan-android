@@ -23,12 +23,15 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
 
-    // Clear all app's SharedPreferences
     @Rule
     public ClearPreferencesRule clearPreferencesRule = new ClearPreferencesRule();
 
     @Rule
-    public TrackingplanJUnitRule trackingplanRule = new TrackingplanJUnitRule("YOUR_TP_ID", "testing");
+    public TrackingplanJUnitRule trackingplanRule = new TrackingplanJUnitRule(
+            "YOUR_TP_ID",
+            "YOUR_TESTING_ENVIRONMENT",
+            "YOUR_TEST_NAME"
+    );
 
     @Test
     public void testMainActivity() {

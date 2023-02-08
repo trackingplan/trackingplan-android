@@ -4,6 +4,7 @@ package com.trackingplan.client.sdk;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
@@ -18,6 +19,7 @@ final public class Trackingplan {
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
     @SuppressWarnings("unused")
+    @MainThread
     public static ConfigInitializer init(String tpId) {
         return new ConfigInitializer(tpId);
     }
@@ -60,7 +62,7 @@ final public class Trackingplan {
 
     /**
      * Flush the queue of intercepted requests. This is a blocking operation and it should be
-     * mainly used for testing purposes.
+     * mainly used for testing purposes. This call times out after 10s.
      */
     @VisibleForTesting()
     public static void flushQueue() {
@@ -79,15 +81,27 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
-        public ConfigInitializer enableDebug() {
-            AndroidLogger.getInstance().setLogcatEnabled(true);
-            configBuilder.enableDebug();
+        public ConfigInitializer configEndPoint(@NonNull String endPoint) {
+            configBuilder.configEndPoint(endPoint);
             return this;
         }
 
         @SuppressWarnings("unused")
-        public ConfigInitializer ignoreContext() {
-            configBuilder.ignoreContext();
+        @VisibleForTesting
+        public ConfigInitializer customContext(@NonNull Map<String, String> customContext) {
+            configBuilder.customContext(customContext);
+            return this;
+        }
+
+        @SuppressWarnings("unused")
+        public ConfigInitializer customDomains(@NonNull Map<String, String> customDomains) {
+            configBuilder.customDomains(customDomains);
+            return this;
+        }
+
+        @VisibleForTesting
+        public ConfigInitializer disableBackgroundObserver() {
+            configBuilder.disableBackgroundObserver();
             return this;
         }
 
@@ -98,8 +112,9 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
-        public ConfigInitializer sourceAlias(@NonNull String alias) {
-            configBuilder.sourceAlias(alias);
+        public ConfigInitializer enableDebug() {
+            AndroidLogger.getInstance().setLogcatEnabled(true);
+            configBuilder.enableDebug();
             return this;
         }
 
@@ -110,8 +125,8 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
-        public ConfigInitializer customDomains(@NonNull Map<String, String> customDomains) {
-            configBuilder.customDomains(customDomains);
+        public ConfigInitializer ignoreContext() {
+            configBuilder.ignoreContext();
             return this;
         }
 
@@ -128,11 +143,12 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
-        public ConfigInitializer configEndPoint(@NonNull String endPoint) {
-            configBuilder.configEndPoint(endPoint);
+        public ConfigInitializer sourceAlias(@NonNull String alias) {
+            configBuilder.sourceAlias(alias);
             return this;
         }
 
+        @MainThread
         public void start(Context ignoredContext) {
             try {
                 var instance = TrackingplanInstance.getInstance();
@@ -157,6 +173,10 @@ final public class Trackingplan {
 
                 if (config.isDryRunEnabled()) {
                     logger.info("DryRun mode enabled");
+                }
+
+                if (!config.isBackgroundObserverEnabled()) {
+                    instance.attachToLifeCycle(null);
                 }
 
                 instance.setConfig(config);

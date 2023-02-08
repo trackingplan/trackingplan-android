@@ -71,6 +71,8 @@ final public class TrackingplanInstance {
     }
 
     private TaskRunner taskRunner;
+
+    // Trackingplan main thread
     private final HandlerThread handlerThread;
     private final Handler handler;
 
@@ -89,14 +91,14 @@ final public class TrackingplanInstance {
     // processRequest will work again when current time >= suspendedUntilMs
     private long suspendedUntilMs = 0;
 
-    private final MyLifeCycleObserver lifeCycleObserver;
-    private Lifecycle lifeCycle;
+    private final MyLifecycleObserver lifecycleObserver;
+    private Lifecycle appLifeCycle;
 
     @MainThread
     TrackingplanInstance(@NonNull final Context context) {
         checkRunningInMainThread();
         this.context = context.getApplicationContext();
-        lifeCycleObserver = new MyLifeCycleObserver();
+        lifecycleObserver = new MyLifecycleObserver();
         providers = makeDefaultProviders();
         config = TrackingplanConfig.emptyConfig;
         requestQueue = new RequestQueue(this);
@@ -110,18 +112,21 @@ final public class TrackingplanInstance {
     protected void finalize() throws Throwable {
         super.finalize();
         handlerThread.quitSafely();
-        if (lifeCycle != null) {
-            lifeCycle.removeObserver(lifeCycleObserver);
+        if (appLifeCycle != null) {
+            appLifeCycle.removeObserver(lifecycleObserver);
         }
         logger.verbose("TrackingplanInstance destroyed");
     }
 
-    public void attachToLifeCycle(@NonNull final Lifecycle lifecycle) {
-        if (lifeCycle != null) {
-            lifeCycle.removeObserver(lifeCycleObserver);
+    @MainThread
+    public void attachToLifeCycle(final Lifecycle lifecycle) {
+        if (appLifeCycle != null) {
+            appLifeCycle.removeObserver(lifecycleObserver);
         }
-        lifecycle.addObserver(lifeCycleObserver);
-        this.lifeCycle = lifecycle;
+        if (lifecycle != null) {
+            lifecycle.addObserver(lifecycleObserver);
+        }
+        this.appLifeCycle = lifecycle;
     }
 
     void stop() {
@@ -268,6 +273,9 @@ final public class TrackingplanInstance {
         }
     }
 
+    /**
+     * Flush the requests queue. It times out after 10s.
+     */
     void flushQueue() {
         flushQueue(10000);
     }
@@ -425,7 +433,7 @@ final public class TrackingplanInstance {
         throw new IllegalThreadStateException("Method must be called from UI main thread");
     }
 
-    private class MyLifeCycleObserver implements DefaultLifecycleObserver {
+    private class MyLifecycleObserver implements DefaultLifecycleObserver {
         @Override
         public void onStop(@NonNull LifecycleOwner owner) {
             DefaultLifecycleObserver.super.onStop(owner);

@@ -2,6 +2,7 @@ package com.trackingplan.client.junit;
 
 import android.content.Context;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -12,17 +13,31 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.util.HashMap;
+
 @VisibleForTesting
 public class TrackingplanJUnitRule implements TestRule {
 
     private final String tpId;
     private final String environment;
+    private final String testName;
 
     private final long SLEEP_TIME_MS = 1500;
 
     public TrackingplanJUnitRule(@NonNull String tpId, @NonNull String environment) {
         this.tpId = tpId;
         this.environment = environment;
+        this.testName = "";
+    }
+
+    public TrackingplanJUnitRule(
+            @NonNull String tpId,
+            @NonNull String environment,
+            @NonNull String testName
+    ) {
+        this.tpId = tpId;
+        this.environment = environment;
+        this.testName = testName;
     }
 
     @NonNull
@@ -32,7 +47,9 @@ public class TrackingplanJUnitRule implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 // Before
-                initTrackingplan(tpId, environment, description);
+                InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                    initTrackingplan(tpId, environment, testName, description);
+                });
                 try {
                     base.evaluate();
                 } finally {
@@ -43,20 +60,34 @@ public class TrackingplanJUnitRule implements TestRule {
         };
     }
 
+    /**
+     * Initialize Trackingplan Android SDK with test environment settings
+     */
+    @MainThread
     private void initTrackingplan(
             @NonNull String tpId,
             @NonNull String environment,
+            @NonNull String testName,
             @NonNull Description description
     ) {
-        // Initialize Trackingplan Android SDK with test environment settings
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        Trackingplan.init(tpId)
+
+        final var initializer = Trackingplan.init(tpId)
+                .customContext(new HashMap<>() {{
+                    put("junit_method_name", description.getMethodName());
+                }})
                 .environment(environment)
-                // TODO: Add support to pass test name as a tag
-                // .sourceAlias(description.getMethodName())
                 .enableDebug()
+                .disableBackgroundObserver();
                 // .dryRun()
-                .start(appContext);
+
+        if (!testName.isEmpty()) {
+            initializer.tags(new HashMap<>() {{
+                put("test_title", testName);
+            }});
+        }
+
+        initializer.start(appContext);
     }
 
     private void sendCollectedRequests() throws InterruptedException {

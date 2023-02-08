@@ -102,7 +102,7 @@ final class RequestQueue {
                 // Note: This callback is executed in Trackingplan thread
                 int numBatchesSent = batchesSentCounter.addAndGet(1);
                 if (numBatchesSent == numBatchesToSend) {
-                    logger.info("Queue flushed (" + numBatchesSent + " batches)");
+                    logger.info("Batch sender finished (" + numBatchesSent + " batches sent)");
                     if (callback != null) callback.run();
                 }
             });
@@ -158,6 +158,7 @@ final class RequestQueue {
             return;
         }
         tpInstance.cancelDelayedTask(watcher);
+        watcher = null;
         logger.debug("Watcher stopped");
     }
 
