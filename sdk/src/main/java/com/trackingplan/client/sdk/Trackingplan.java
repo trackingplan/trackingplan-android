@@ -18,20 +18,61 @@ final public class Trackingplan {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-    @SuppressWarnings("unused")
-    @MainThread
-    public static ConfigInitializer init(String tpId) {
-        return new ConfigInitializer(tpId);
+    private Trackingplan() {
+        // Empty
     }
 
     @SuppressWarnings("unused")
-    public static void stop() {
-        stop(true);
+    @MainThread
+    public static ConfigInitializer init(@NonNull String tpId) {
+        return new ConfigInitializer(tpId);
     }
 
     @VisibleForTesting
     public static void clearInitState() {
         stop(false);
+    }
+
+    @MainThread
+    public static void start(@NonNull TrackingplanConfig config) {
+        try {
+            var instance = TrackingplanInstance.getInstance();
+
+            if (instance == null) {
+                throw new RuntimeException("Instance not registered during app startup");
+            }
+
+            if (instance.isConfigured()) {
+                logger.info("Trackingplan is already initialized. Start ignored");
+                return;
+            }
+
+            // Enable instrument in case SDK was stopped before
+            InstrumentRequestBuilder.setDisabled(false);
+
+            if (config.isDebugEnabled()) {
+                logger.info("Debug mode enabled");
+            }
+
+            if (config.isDryRunEnabled()) {
+                logger.info("DryRun mode enabled");
+            }
+
+            if (!config.isBackgroundObserverEnabled()) {
+                instance.attachToLifeCycle(null);
+            }
+
+            instance.setConfig(config);
+
+        } catch (Exception e) {
+            // Use Log because AndroidLogger may not be enabled
+            Log.w(LogWrapper.LOG_TAG, "Trackingplan start failed: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static void stop() {
+        stop(true);
     }
 
     private static void stop(boolean unregisterInstance) {
@@ -87,21 +128,8 @@ final public class Trackingplan {
         }
 
         @SuppressWarnings("unused")
-        @VisibleForTesting
-        public ConfigInitializer customContext(@NonNull Map<String, String> customContext) {
-            configBuilder.customContext(customContext);
-            return this;
-        }
-
-        @SuppressWarnings("unused")
         public ConfigInitializer customDomains(@NonNull Map<String, String> customDomains) {
             configBuilder.customDomains(customDomains);
-            return this;
-        }
-
-        @VisibleForTesting
-        public ConfigInitializer disableBackgroundObserver() {
-            configBuilder.disableBackgroundObserver();
             return this;
         }
 
@@ -150,41 +178,8 @@ final public class Trackingplan {
 
         @MainThread
         public void start(Context ignoredContext) {
-            try {
-                var instance = TrackingplanInstance.getInstance();
-
-                if (instance == null) {
-                    throw new RuntimeException("Instance not registered during app startup");
-                }
-
-                if (instance.isConfigured()) {
-                    logger.info("Trackingplan is already initialized. Start ignored");
-                    return;
-                }
-
-                // Enable instrument in case SDK was stopped before
-                InstrumentRequestBuilder.setDisabled(false);
-
-                TrackingplanConfig config = configBuilder.build();
-
-                if (config.isDebugEnabled()) {
-                    logger.info("Debug mode enabled");
-                }
-
-                if (config.isDryRunEnabled()) {
-                    logger.info("DryRun mode enabled");
-                }
-
-                if (!config.isBackgroundObserverEnabled()) {
-                    instance.attachToLifeCycle(null);
-                }
-
-                instance.setConfig(config);
-
-            } catch (Exception e) {
-                // Use Log because AndroidLogger may not be enabled
-                Log.w(LogWrapper.LOG_TAG, "Trackingplan initialization failed: " + e.getMessage());
-            }
+            TrackingplanConfig config = configBuilder.build();
+            Trackingplan.start(config);
         }
     }
 }

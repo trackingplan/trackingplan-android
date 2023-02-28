@@ -2,6 +2,7 @@
 package com.trackingplan.client.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,11 @@ final public class TrackingplanConfig {
 
     private String tracksEndPoint;
     private String configEndPoint;
+
+    @VisibleForTesting
+    public static Builder newConfig(@NonNull String tpId) {
+        return new Builder(tpId);
+    }
 
     private TrackingplanConfig() {
         this.tpId = "";
@@ -144,7 +150,7 @@ final public class TrackingplanConfig {
                 debug, dryRun, environment, ignoreContext, tags, tpId, tracksEndPoint, sourceAlias);
     }
 
-    static class Builder {
+    public static class Builder {
 
         private TrackingplanConfig config;
 
@@ -155,64 +161,77 @@ final public class TrackingplanConfig {
             config = new TrackingplanConfig(tpId);
         }
 
-        public void configEndPoint(@NonNull String configEndPoint) {
+        public Builder configEndPoint(@NonNull String configEndPoint) {
             config.configEndPoint = endPointInput(configEndPoint);
+            return this;
         }
 
-        public void customContext(@NonNull Map<String, String> context) {
+        @VisibleForTesting
+        public Builder customContext(@NonNull Map<String, String> context) {
             config.customContext.clear();
             config.customContext.putAll(context);
+            return this;
         }
 
-        public void customDomains(@NonNull Map<String, String> customDomains) {
+        public Builder customDomains(@NonNull Map<String, String> customDomains) {
             config.customDomains.clear();
             config.customDomains.putAll(customDomains);
+            return this;
         }
 
-        public void enableDebug() {
+        public Builder enableDebug() {
             config.debug = true;
+            return this;
         }
 
-        public void enableDryRun() {
+        public Builder enableDryRun() {
             config.dryRun = true;
+            return this;
         }
 
-        public void environment(@NonNull String environment) {
+        public Builder environment(@NonNull String environment) {
             config.environment = environment;
+            return this;
         }
 
-        public void disableBackgroundObserver() {
+        @VisibleForTesting
+        public Builder disableBackgroundObserver() {
             config.backgroundObserver = false;
+            return this;
         }
 
-        public void ignoreContext() {
+        public Builder ignoreContext() {
             config.ignoreContext = true;
+            return this;
         }
 
-        public void sourceAlias(@NonNull String alias) {
+        public Builder sourceAlias(@NonNull String alias) {
             config.sourceAlias = alias;
+            return this;
         }
 
-        public void tags(@NonNull Map<String, String> tags) {
+        public Builder tags(@NonNull Map<String, String> tags) {
             config.tags.clear();
             config.tags.putAll(tags);
+            return this;
         }
 
-        public void tracksEndPoint(@NonNull String tracksEndPoint) {
+        public Builder tracksEndPoint(@NonNull String tracksEndPoint) {
             config.tracksEndPoint = endPointInput(tracksEndPoint);
+            return this;
         }
 
         @NonNull
         public TrackingplanConfig build() {
 
             TrackingplanConfig result = this.config;
+            reset();
 
             if (result.isDryRunEnabled() && !result.isDebugEnabled()) {
                 throw new RuntimeException("Cannot enable DryRun mode. DryRun mode must be used along with " +
                         "Debug mode. Please, enable Debug mode or remove dryRun() call from initialization");
             }
 
-            reset();
             return result;
         }
 

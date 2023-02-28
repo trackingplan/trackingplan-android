@@ -33,12 +33,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.4.1` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.5.1` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.4.1"
+    classpath "com.trackingplan.client:adapter:1.5.1"
     // ...
 }
 ```
@@ -54,11 +54,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.4.1'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.5.1'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.4.1'
+    implementation 'com.trackingplan.client:sdk:1.5.1'
     // ...
 }
 ```
@@ -159,31 +159,49 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.4.1` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:1.5.1` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
 
 ```gradle
 dependencies {
     // ...
-    androidTestImplementation "com.trackingplan.client:junit-tools:1.4.1"
+    androidTestImplementation "com.trackingplan.client:junit-tools:1.5.1"
     // ...
 }
 ```
 
-2. Import the `TrackingplanJUnitRule`:
+2. Import the `TrackingplanJUnit`:
 
 ```java
-import com.trackingplan.client.junit.TrackingplanJUnitRule;
+import com.trackingplan.client.junit.TrackingplanJUnit;
 ```
 
 3. In each JUnit file, add the imported rule to your instrumented test code:
 
 ```java
 @Rule
-public TrackingplanJUnitRule trackingplanRule = new TrackingplanJUnitRule("YOUR_TP_ID", "YOUR_TESTING_ENVIRONMENT");
+public TrackingplanRule trackingplanRule =
+    TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
+            .tags(new HashMap<>() {{
+                put("test_title", "My test");
+                put("test_session_name", "My session");
+            }})
+            .dryRun()
+            .newRule();
 ```
 
+Or in Kotlin:
 
-The `TrackingplanJUnitRule` will initialize the SDK before each test is executed. And it will ensure that all the collected data is sent to Trackingplan after every test execution. Note that this rule will overwrite any existing initialization of Trackingplan SDK for Android in your app.
+```kotlin
+@get:Rule
+val trackingplanRule = TrackingplanJUnit.init("TP369979", "OnDemandBuild")
+    .tags(mapOf(
+        "test_title" to "My Test",
+        "test_session_name" to "My Session"
+    ))
+    .newRule()
+```
+
+The `TrackingplanRule` will initialize the SDK before each test is executed. And it will ensure that all the collected data is sent to Trackingplan after every test execution. Note that this rule will overwrite any existing initialization of Trackingplan SDK for Android in your app.
 
 ## Building from source code
 

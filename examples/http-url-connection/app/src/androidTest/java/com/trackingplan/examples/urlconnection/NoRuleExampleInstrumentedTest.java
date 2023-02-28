@@ -10,9 +10,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.adevinta.android.barista.rule.cleardata.ClearPreferencesRule;
 import com.trackingplan.client.junit.TrackingplanJUnit;
-import com.trackingplan.client.junit.TrackingplanRule;
 
-
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,20 +25,26 @@ import java.util.HashMap;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class ExampleInstrumentedTest {
+public class NoRuleExampleInstrumentedTest {
 
     @Rule
     public ClearPreferencesRule clearPreferencesRule = new ClearPreferencesRule();
 
-    @Rule
-    public TrackingplanRule trackingplanRule =
-            TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
-                    .tags(new HashMap<>() {{
-                        put("test_title", "My test");
-                        put("test_session_name", "My session");
-                    }})
-                    .dryRun()
-                    .newRule();
+    @Before
+    public void initTrackingplan() {
+        TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
+                .tags(new HashMap<>() {{
+                    put("test_title", "My test");
+                    put("test_session_name", "My session");
+                }})
+                .dryRun()
+                .start();
+    }
+
+    @After
+    public void sendData() throws InterruptedException {
+        TrackingplanJUnit.doSendAndStop();
+    }
 
     @Test
     public void testMainActivity() {
