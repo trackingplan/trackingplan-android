@@ -38,6 +38,7 @@ public class ExampleInstrumentedTest {
                         put("test_session_name", "My session");
                     }})
                     .dryRun()
+                    .waitTimeMs(0)
                     .newRule();
 
     @Test

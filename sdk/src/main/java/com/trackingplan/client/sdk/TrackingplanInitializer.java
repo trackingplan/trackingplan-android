@@ -19,14 +19,14 @@ public class TrackingplanInitializer implements Initializer<TrackingplanInstance
 
         var logger = AndroidLogger.getInstance();
 
-        logger.info("Starting initialization...");
+        logger.info("Launching Trackingplan service...");
 
         var instance = new TrackingplanInstance(context.getApplicationContext());
         instance.attachToLifeCycle(ProcessLifecycleOwner.get().getLifecycle());
         
         TrackingplanInstance.registerInstance(instance);
 
-        logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " initialized");
+        logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " running");
 
         return instance;
     }

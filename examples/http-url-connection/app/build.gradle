@@ -13,13 +13,19 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.trackingplan.client.junit.TrackingplanJUnitRunner"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            trackingplan {
+                enabled true
+            }
         }
     }
     compileOptions {
@@ -43,9 +49,6 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.4.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation "com.trackingplan.client:junit-tools:$TrackingplanVersion"
-    androidTestImplementation 'androidx.test.ext:junit:1.1.4'
-    // androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
-    androidTestImplementation('com.adevinta.android:barista:4.2.0') {
-        exclude group: 'org.jetbrains.kotlin' // Only if you already use Kotlin in your project
-    }
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation('com.adevinta.android:barista:4.2.0')
 }

@@ -2,19 +2,19 @@ package com.trackingplan.examples.urlconnection;
 
 import android.os.Bundle;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.trackingplan.examples.urlconnection.databinding.ActivityMain2Binding;
-import com.trackingplan.examples.urlconnection.tasks.TestGaEvents;
+import com.trackingplan.examples.urlconnection.tasks.SendGaEvents;
 
 public class MainActivity2 extends AppCompatActivity {
 
+    final private SendGaEvents backgroundTask = new SendGaEvents(this.getClass().getName(), 10);
     private ActivityMain2Binding binding;
 
     @Override
@@ -34,6 +34,12 @@ public class MainActivity2 extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
 
-        new Thread(new TestGaEvents()).start();
+        new Thread(backgroundTask).start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        backgroundTask.stop();
     }
 }

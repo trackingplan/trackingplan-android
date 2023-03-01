@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.trackingplan.client.sdk.Trackingplan;
 import com.trackingplan.client.sdk.TrackingplanConfig;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 
@@ -30,9 +31,10 @@ public class TrackingplanJUnit {
     @MainThread
     private static void start(@NonNull TrackingplanConfig config) {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-            logger.verbose("TrackingplanRule initialization started on main thread...");
-            com.trackingplan.client.sdk.Trackingplan.start(config);
-            logger.verbose("TrackingplanRule initialization finished");
+            logger.verbose("TrackingplanJUnit starting on main thread...");
+            Trackingplan.clearInitState();
+            Trackingplan.startTest(config);
+            logger.verbose("TrackingplanJUnit started");
         });
     }
 
@@ -40,18 +42,28 @@ public class TrackingplanJUnit {
      * Send collected requests to Trackingplan and stops collecting requests
      */
     public static void doSendAndStop() throws InterruptedException {
+        doSendAndStop(1500);
+    }
+
+    /**
+     * Send collected requests to Trackingplan and stops collecting requests
+     */
+    public static void doSendAndStop(long waitTimeMs) throws InterruptedException {
+        logger.verbose("TrackingplanJUnit do send and stop...");
         // Wait for analytic requests to be triggered
-        long SLEEP_TIME_MS = 1500;
-        Thread.sleep(SLEEP_TIME_MS);
+        if (waitTimeMs > 0) {
+            Thread.sleep(waitTimeMs);
+        }
         // Ensures that all of the intercepted analytic requests are sent to Trackingplan
-        com.trackingplan.client.sdk.Trackingplan.flushQueue();
+        Trackingplan.flushQueue();
         // Clear initialization state so that the next init call works
-        com.trackingplan.client.sdk.Trackingplan.clearInitState();
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(Trackingplan::clearInitState);
     }
 
     public static class TrackingplanInitializer {
 
         private final TrackingplanConfig.Builder configBuilder;
+        private long waitTimeMs = 1500;
 
         private TrackingplanInitializer(@NonNull String tpId, @NonNull String environment) {
             configBuilder = TrackingplanConfig.newConfig(tpId)
@@ -90,9 +102,14 @@ public class TrackingplanJUnit {
             return this;
         }
 
+        public TrackingplanInitializer waitTimeMs(long waitTimeMs) {
+            this.waitTimeMs = waitTimeMs;
+            return this;
+        }
+
         @NonNull
         public TrackingplanRule newRule() {
-            return new TrackingplanRule(this);
+            return new TrackingplanRule(this, waitTimeMs);
         }
 
         public void start() {

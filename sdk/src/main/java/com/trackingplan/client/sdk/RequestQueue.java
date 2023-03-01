@@ -33,6 +33,9 @@ final class RequestQueue {
         tpInstance = instance;
     }
 
+    /**
+     * This method must be called from Trackingplan thread
+     */
     public void queueRequest(@NonNull HttpRequest request) {
         if (shuttingDown) {
             logger.verbose("Couldn't queue request because queue is stopped");
@@ -75,7 +78,7 @@ final class RequestQueue {
         }
 
         if (queue.isEmpty()) {
-            logger.debug("Process queue ignored. Queue is empty");
+            logger.debug("Queue is empty. Nothing to do");
             if (callback != null) callback.run();
             return;
         }
@@ -177,16 +180,31 @@ final class RequestQueue {
         return batch;
     }
 
+    /**
+     * This method must be called from Trackingplan thread
+     */
     public void start() {
         shuttingDown = false;
     }
 
+    /**
+     * This method must be called from Trackingplan thread
+     */
     public void stop() {
         shuttingDown = true;
         stopWatcher();
-        discardPendingRequests();
+        int numPendingRequests = discardPendingRequests();
+        if (numPendingRequests > 0) {
+            logger.info(numPendingRequests + " pending intercepted requests were discarded");
+        }
     }
-    public void discardPendingRequests() {
+
+    /**
+     * This method must be called from Trackingplan thread
+     */
+    public int discardPendingRequests() {
+        int numRequests = queue.size();
         queue.clear();
+        return numRequests;
     }
 }

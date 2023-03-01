@@ -9,6 +9,7 @@ import android.os.SystemClock;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.os.HandlerCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
@@ -56,6 +57,11 @@ import java.util.concurrent.TimeUnit;
  */
 final public class TrackingplanInstance {
 
+    public enum RuntimeEnvironment {
+        AndroidDefault,
+        AndroidJUnit
+    }
+
     private static final long FETCH_CONFIG_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -70,10 +76,9 @@ final public class TrackingplanInstance {
         TrackingplanInstance.instance = instance;
     }
 
-    private TaskRunner taskRunner;
-
     // Trackingplan main thread
     private final HandlerThread handlerThread;
+    private final TaskRunner taskRunner;
     private final Handler handler;
 
     private final Map<String, String> providers;
@@ -94,6 +99,8 @@ final public class TrackingplanInstance {
     private final MyLifecycleObserver lifecycleObserver;
     private Lifecycle appLifeCycle;
 
+    private RuntimeEnvironment runtimeEnvironment = RuntimeEnvironment.AndroidDefault;
+
     @MainThread
     TrackingplanInstance(@NonNull final Context context) {
         checkRunningInMainThread();
@@ -106,6 +113,7 @@ final public class TrackingplanInstance {
         handlerThread = new HandlerThread("Trackingplan");
         handlerThread.start();
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
+        taskRunner = new TaskRunner(this.handler);
     }
 
     @Override
@@ -116,6 +124,11 @@ final public class TrackingplanInstance {
             appLifeCycle.removeObserver(lifecycleObserver);
         }
         logger.verbose("TrackingplanInstance destroyed");
+    }
+
+    @VisibleForTesting
+    public void setRuntimeEnvironment(RuntimeEnvironment runtime) {
+        this.runtimeEnvironment = runtime;
     }
 
     @MainThread
@@ -129,37 +142,68 @@ final public class TrackingplanInstance {
         this.appLifeCycle = lifecycle;
     }
 
-    void stop() {
-        requestQueue.stop();
-        this.config = TrackingplanConfig.emptyConfig;
-    }
-
-    void setConfig(@NonNull TrackingplanConfig config) {
+    @MainThread
+    void start(@NonNull TrackingplanConfig config) throws IllegalArgumentException {
 
         if (config.equals(TrackingplanConfig.emptyConfig)) {
-            throw new RuntimeException("Empty config");
+            throw new IllegalArgumentException("Empty config");
         }
 
-        this.config = config;
-
-        requestQueue.start();
-
-        providers.clear();
-        providers.putAll(makeDefaultProviders());
-        providers.putAll(config.customDomains());
-
-        taskRunner = new TaskRunner(this.handler);
-
-        client = new TrackingplanClient(config, context);
-
-        SessionData sessionData = SessionDataStorage.load(config.getTpId(), context);
-        if (!SessionDataStorage.hasExpired(sessionData)) {
-            // Start session in Trackingplan thread
-            runSync(() -> startSession(sessionData));
+        if (!config.isBackgroundObserverEnabled()) {
+            attachToLifeCycle(null);
         }
-        // else Session initialization will be triggered in processRequest
 
-        logger.info("Configuration: " + config);
+        // Start in Trackingplan thread
+        runSync(() -> {
+
+            if (instance.isConfigured()) {
+                logger.info("Trackingplan is already initialized. Start ignored");
+                return;
+            }
+
+            if (config.isDebugEnabled()) {
+                logger.info("Debug mode enabled");
+            }
+
+            if (config.isDryRunEnabled()) {
+                logger.info("DryRun mode enabled");
+            }
+
+            logger.info("Configuration: " + config);
+
+            this.config = config;
+
+            providers.clear();
+            providers.putAll(makeDefaultProviders());
+            providers.putAll(config.customDomains());
+
+            requestQueue.start();
+
+            client = new TrackingplanClient(config, context);
+
+            // Get session data. Note that session data is bypassed for AndroidJUnit
+            SessionData sessionData;
+            if (runtimeEnvironment == RuntimeEnvironment.AndroidJUnit) {
+                sessionData = new SessionData(config.getTpId(), 1, true, System.currentTimeMillis());
+            } else {
+                sessionData = SessionDataStorage.load(config.getTpId(), context);
+            }
+
+            if (!SessionDataStorage.hasExpired(sessionData)) {
+                startSession(sessionData);
+            }
+            // else Session initialization will be triggered in processRequest
+        });
+    }
+
+    @MainThread
+    void stop() {
+        attachToLifeCycle(null);
+        // Stop in Trackingplan thread
+        runSync(() -> {
+            requestQueue.stop();
+            this.config = TrackingplanConfig.emptyConfig;
+        });
     }
 
     public Context getContext() {
@@ -276,6 +320,7 @@ final public class TrackingplanInstance {
     /**
      * Flush the requests queue. It times out after 10s.
      */
+    @VisibleForTesting
     void flushQueue() {
         flushQueue(10000);
     }
@@ -284,7 +329,7 @@ final public class TrackingplanInstance {
         final CountDownLatch lock = new CountDownLatch(1);
         runSync(() -> {
             if (!isConfigured() || SessionDataStorage.hasExpired(currentSessionData) || !currentSessionData.isTrackingEnabled()) {
-                logger.info("Processing queue ignored because of missing information");
+                logger.info("Processing queue ignored because of missing configuration");
                 lock.countDown();
                 return;
             }
@@ -311,6 +356,10 @@ final public class TrackingplanInstance {
         return config != null && !TrackingplanConfig.emptyConfig.equals(config);
     }
 
+    RuntimeEnvironment getRuntimeEnvironment() {
+        return runtimeEnvironment;
+    }
+
     private void startSession(SessionData sessionData) {
 
         this.currentSessionData = sessionData;
@@ -335,10 +384,12 @@ final public class TrackingplanInstance {
      */
     private void suspendRequestProcessingTemporarily(long duration) {
         suspendedUntilMs = SystemClock.elapsedRealtime() + duration;
-        requestQueue.discardPendingRequests();
+        int numPendingRequests = requestQueue.discardPendingRequests();
         logger.warn("Request processing is suspended temporarily for " + (duration / 1000) + " seconds");
         logger.info("Tracking is disabled for this session.");
-        logger.info("All pending intercepted requests were discarded");
+        if (numPendingRequests > 0) {
+            logger.info(numPendingRequests + " pending intercepted requests were discarded");
+        }
     }
 
     private boolean isSuspended() {

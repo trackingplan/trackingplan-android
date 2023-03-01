@@ -6,26 +6,15 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.trackingplan.client.sdk.Trackingplan;
-import com.trackingplan.examples.urlconnection.tasks.TestGaEvents;
+import com.trackingplan.examples.urlconnection.tasks.SendGaEvents;
 
 public class MainActivity extends AppCompatActivity {
+
+    final private SendGaEvents backgroundTask = new SendGaEvents(this.getClass().getName(), 10);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Trackingplan.init("YOUR_TP_ID")
-                // .environment("PRODUCTION")
-                // .sourceAlias("Android Example")
-                // .tags(YOUR_TAGS)
-                // .customDomains(YOUR_CUSTOM_DOMAINS)
-                .enableDebug()
-                .dryRun()
-                .start(this);
-
-        // Trackingplan.stop();
-
         setContentView(R.layout.activity_main);
         final Button button = findViewById(R.id.button);
         button.setOnClickListener(view -> {
@@ -33,8 +22,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(myIntent);
         });
 
-        // new Thread(new RandomGaEventsGenerator()).start();
-        new Thread(new TestGaEvents()).start();
-        // new Thread(new TestUrlConnection()).start();
+        new Thread(backgroundTask).start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        backgroundTask.stop();
     }
 }

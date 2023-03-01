@@ -29,52 +29,60 @@ final public class Trackingplan {
     }
 
     @VisibleForTesting
+    @MainThread
     public static void clearInitState() {
         stop(false);
     }
 
     @MainThread
     public static void start(@NonNull TrackingplanConfig config) {
+
+        var instance = TrackingplanInstance.getInstance();
+
+        if (instance == null) {
+            logger.error("Trackingplan was not registered during app startup");
+            return;
+        }
+
+        if (instance.getRuntimeEnvironment() == TrackingplanInstance.RuntimeEnvironment.AndroidJUnit) {
+            logger.info("Trackingplan running in JUnit. Start from application ignored");
+            return;
+        }
+
+        startTrackingplan(instance, config);
+    }
+
+    @MainThread
+    @VisibleForTesting
+    public static void startTest(@NonNull TrackingplanConfig config) {
+
+        var instance = TrackingplanInstance.getInstance();
+
+        if (instance == null) {
+            logger.error("Trackingplan was not registered during app startup");
+            return;
+        }
+
+        startTrackingplan(instance, config);
+    }
+
+    private static void startTrackingplan(@NonNull TrackingplanInstance instance, @NonNull TrackingplanConfig config) {
         try {
-            var instance = TrackingplanInstance.getInstance();
-
-            if (instance == null) {
-                throw new RuntimeException("Instance not registered during app startup");
-            }
-
-            if (instance.isConfigured()) {
-                logger.info("Trackingplan is already initialized. Start ignored");
-                return;
-            }
-
             // Enable instrument in case SDK was stopped before
             InstrumentRequestBuilder.setDisabled(false);
-
-            if (config.isDebugEnabled()) {
-                logger.info("Debug mode enabled");
-            }
-
-            if (config.isDryRunEnabled()) {
-                logger.info("DryRun mode enabled");
-            }
-
-            if (!config.isBackgroundObserverEnabled()) {
-                instance.attachToLifeCycle(null);
-            }
-
-            instance.setConfig(config);
-
+            instance.start(config);
         } catch (Exception e) {
             // Use Log because AndroidLogger may not be enabled
-            Log.w(LogWrapper.LOG_TAG, "Trackingplan start failed: " + e.getMessage());
+            Log.e(LogWrapper.LOG_TAG, "Trackingplan start failed: " + e.getMessage());
         }
     }
 
-    @SuppressWarnings("unused")
+    @MainThread
     public static void stop() {
         stop(true);
     }
 
+    @MainThread
     private static void stop(boolean unregisterInstance) {
 
         InstrumentRequestBuilder.setDisabled(true);
@@ -87,17 +95,16 @@ final public class Trackingplan {
                     TrackingplanInstance.registerInstance(null);
                 }
             } else {
-                logger.warn(LogWrapper.LOG_TAG, "Instance not registered during app startup");
+                throw new Exception("Trackingplan was not registered during app startup");
             }
+
+            if (unregisterInstance) {
+                logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled. To enable it again remove the stop() call and restart the app.");
+            }
+
         } catch (Exception e) {
             // Use Log because AndroidLogger may not be enabled
-            Log.w(LogWrapper.LOG_TAG, "Stop instance failed: " + e.getMessage());
-        }
-
-        if (unregisterInstance) {
-            logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled. To enable it again remove the stop() call and restart the app.");
-        } else {
-            logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " stopped. To start it again use Trackingplan.init(string).start()");
+            Log.e(LogWrapper.LOG_TAG, "Trackingplan stop failed: " + e.getMessage());
         }
     }
 

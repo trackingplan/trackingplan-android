@@ -17,10 +17,12 @@ public class TrackingplanRule implements TestRule {
     private static final AndroidLogger logger = AndroidLogger.getInstance();
 
     private final TrackingplanJUnit.TrackingplanInitializer initializer;
+    private final long waitTimeMs;
 
-    TrackingplanRule(TrackingplanJUnit.TrackingplanInitializer initializer) {
+    TrackingplanRule(TrackingplanJUnit.TrackingplanInitializer initializer, long waitTimeMs) {
         logger.verbose("TrackingplanRule instanced");
         this.initializer = initializer;
+        this.waitTimeMs = waitTimeMs;
     }
 
     @NonNull
@@ -34,16 +36,13 @@ public class TrackingplanRule implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 // Before
-                logger.verbose("TrackingplanRule before test");
                 initializer.start();
                 try {
                     // Test
-                    logger.verbose("TrackingplanRule evaluating test...");
                     base.evaluate();
                 } finally {
                     // After
-                    logger.verbose("TrackingplanRule after test");
-                    TrackingplanJUnit.doSendAndStop();
+                    TrackingplanJUnit.doSendAndStop(waitTimeMs);
                 }
             }
         };
