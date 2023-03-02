@@ -101,15 +101,15 @@ final class RequestQueue {
         for (int i = 0; i < numBatchesToSend; i++) {
             final List<HttpRequest> batch = takeElements(queue);
             final var batchSender = new TaskRunnerBatchSender(tpInstance.getClient(), tpInstance.getTaskRunner());
-            batchSender.send(batch, samplingRate, lastBatchId, () -> {
+            batchSender.send(batch, samplingRate, lastBatchId, (long batchId) -> {
                 // Note: This callback is executed in Trackingplan thread
                 int numBatchesSent = batchesSentCounter.addAndGet(1);
                 if (numBatchesSent == numBatchesToSend) {
-                    logger.info("Batch sender finished (" + numBatchesSent + " batches sent)");
+                    logger.debug("Batch sender finished (" + numBatchesSent + " batches sent)");
                     if (callback != null) callback.run();
                 }
             });
-            logger.info("Queue processed (" + batch.size() + " requests). Batch " + lastBatchId + " scheduled for sending");
+            logger.debug("Queue processed (" + batch.size() + " requests). Batch " + lastBatchId + " scheduled for sending");
 
             lastBatchId = (lastBatchId + 1) % 10000;
         }
@@ -195,7 +195,7 @@ final class RequestQueue {
         stopWatcher();
         int numPendingRequests = discardPendingRequests();
         if (numPendingRequests > 0) {
-            logger.info(numPendingRequests + " pending intercepted requests were discarded");
+            logger.debug(numPendingRequests + " pending intercepted requests were discarded");
         }
     }
 

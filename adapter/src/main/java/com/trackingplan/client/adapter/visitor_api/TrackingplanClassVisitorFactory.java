@@ -10,6 +10,7 @@ import com.android.build.api.instrumentation.InstrumentationParameters;
 import com.android.build.api.instrumentation.InstrumentationScope;
 import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationVariant;
+import com.trackingplan.client.adapter.core.AdapterFlagState;
 import com.trackingplan.client.adapter.core.asm.AdapterClassVisitor;
 import com.trackingplan.client.adapter.core.TransformableChecker;
 import com.trackingplan.client.adapter.core.TransformationConfigFactory;
@@ -58,10 +59,14 @@ public abstract class TrackingplanClassVisitorFactory
         return instrumentable;
     }
 
-    public static void registerForProject(Project project) {
+    public static void registerForProject(Project project, AdapterFlagState adapterFlagState) {
         var androidComponents = project.getExtensions().getByType(AndroidComponentsExtension.class);
         androidComponents.onVariants(androidComponents.selector().all(), variant -> {
-            registerForVariant((ApplicationVariant) variant);
+            final var appVariant = (ApplicationVariant) variant;
+            boolean enabled = adapterFlagState.isEnabledFor(appVariant.getName(), appVariant.getBuildType());
+            if (enabled) {
+                registerForVariant(appVariant);
+            }
         });
     }
 

@@ -1,22 +1,21 @@
 package com.trackingplan.client.junit;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.test.runner.AndroidJUnitRunner;
 
+import com.trackingplan.client.sdk.Trackingplan;
 import com.trackingplan.client.sdk.TrackingplanInstance;
+import com.trackingplan.client.sdk.util.AndroidLogger;
 
 public class TrackingplanJUnitRunner extends AndroidJUnitRunner {
+
+    private static final AndroidLogger logger = new AndroidLogger("TrackingplanJUnitRunner");
+
     @Override
     public void callApplicationOnCreate(Application app) {
-        Log.i("TrackingplanJUnitRunner", "Launching application...");
-        final var instance = TrackingplanInstance.getInstance();
-        if (instance != null) {
-            instance.setRuntimeEnvironment(TrackingplanInstance.RuntimeEnvironment.AndroidJUnit);
-        } else {
-            Log.e("TrackingplanJUnitRunner", "Couldn't set up the runtime environment because TrackingplanInstance is not registered.");
-        }
+        logger.info("Launching application...");
+        Trackingplan.enableInstrumentedTestMode();
         super.callApplicationOnCreate(app);
     }
 }

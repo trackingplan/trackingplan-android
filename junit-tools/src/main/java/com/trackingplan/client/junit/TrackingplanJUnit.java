@@ -66,6 +66,7 @@ public class TrackingplanJUnit {
         private long waitTimeMs = 1500;
 
         private TrackingplanInitializer(@NonNull String tpId, @NonNull String environment) {
+            AndroidLogger.setLogLevel(AndroidLogger.LogLevel.VERBOSE);
             configBuilder = TrackingplanConfig.newConfig(tpId)
                     .environment(environment)
                     .enableDebug()

@@ -58,15 +58,15 @@ public class TrackingplanPlugin implements Plugin<Project> {
 
         if (gradlePluginVersion.compareTo(new SimpleAGPVersion(8, 0, 0)) >= 0
                 || (gradlePluginVersion.compareTo(new SimpleAGPVersion(7, 2, 0)) >= 0
-                && useAsmClassVisitor.isPresent() && Boolean.TRUE.equals((useAsmClassVisitor.get())))) {
-
+                && useAsmClassVisitor.isPresent() && Boolean.TRUE.equals((useAsmClassVisitor.get())))
+        ) {
             // Note that the use of the AsmClassVisitor (Variant / Instrumentation API) is opted-in
             // due to the lack of support to transform bytecode from third-party dependencies when using
             // this API. Starting with AGP 8.0 this will be the default method as the Transform API will
             // be removed.
 
             logger.info("Using new Instrumentation API");
-            TrackingplanClassVisitorFactory.registerForProject(project);
+            TrackingplanClassVisitorFactory.registerForProject(project, adapterFlagState);
 
         } else {
 

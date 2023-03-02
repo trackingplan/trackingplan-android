@@ -75,7 +75,7 @@ final public class FirebaseAnalytics {
     public static void setAnalyticsCollectionEnabled(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa, boolean enabled) {
         analyticsEnabled = enabled;
         fa.setAnalyticsCollectionEnabled(enabled);
-        logger.info(String.format("FirebaseAnalytics is %s", enabled ? "enabled" : "disabled"));
+        logger.debug(String.format("FirebaseAnalytics is %s", enabled ? "enabled" : "disabled"));
     }
 
     private static void interceptMethodCall(@NonNull com.google.firebase.analytics.FirebaseAnalytics fa,

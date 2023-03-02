@@ -4,13 +4,11 @@ package com.trackingplan.client.sdk.interception;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.util.AndroidLogger;
-import com.trackingplan.client.sdk.util.LogWrapper;
 
 public abstract class InstrumentRequestBuilder {
 
@@ -79,7 +77,7 @@ public abstract class InstrumentRequestBuilder {
 
             if (tpInstance == null) {
                 // Use Log directly because at this point logger is not enabled
-                Log.w(LogWrapper.LOG_TAG, "Request ignored. Looks like Trackingplan SDK is disabled.");
+                logger.warn("Request ignored. Looks like Trackingplan SDK is disabled.");
                 return;
             }
 

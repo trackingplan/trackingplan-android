@@ -10,6 +10,7 @@ public class ExampleApplication extends Application {
         super.onCreate();
         System.out.println("ExampleApplication::onCreate");
         Trackingplan.init("YOUR_TP_ID")
+                // .environment("PRODUCTION")
                 .enableDebug()
                 .dryRun()
                 .start(this);

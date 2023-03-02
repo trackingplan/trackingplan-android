@@ -2,7 +2,6 @@
 package com.trackingplan.client.sdk;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
@@ -10,7 +9,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
 import com.trackingplan.client.sdk.util.AndroidLogger;
-import com.trackingplan.client.sdk.util.LogWrapper;
 
 import java.util.Map;
 
@@ -34,10 +32,28 @@ final public class Trackingplan {
         stop(false);
     }
 
+    @VisibleForTesting
+
+    /**
+     * Tells Trackingplan SDK that it is running as part of an instrumented test. This mode inhibits
+     * Trackingplan initialization from app (see {@link Trackingplan#init#start})
+     */
+    public static void enableInstrumentedTestMode() {
+
+        final var instance = TrackingplanInstance.getInstance();
+
+        if (instance == null) {
+            logger.error("Couldn't set up the runtime environment because TrackingplanInstance is not registered.");
+            return;
+        }
+
+        instance.setRuntimeEnvironment(TrackingplanInstance.RuntimeEnvironment.AndroidJUnit);
+    }
+
     @MainThread
     public static void start(@NonNull TrackingplanConfig config) {
 
-        var instance = TrackingplanInstance.getInstance();
+        final var instance = TrackingplanInstance.getInstance();
 
         if (instance == null) {
             logger.error("Trackingplan was not registered during app startup");
@@ -56,7 +72,7 @@ final public class Trackingplan {
     @VisibleForTesting
     public static void startTest(@NonNull TrackingplanConfig config) {
 
-        var instance = TrackingplanInstance.getInstance();
+        final var instance = TrackingplanInstance.getInstance();
 
         if (instance == null) {
             logger.error("Trackingplan was not registered during app startup");
@@ -72,8 +88,7 @@ final public class Trackingplan {
             InstrumentRequestBuilder.setDisabled(false);
             instance.start(config);
         } catch (Exception e) {
-            // Use Log because AndroidLogger may not be enabled
-            Log.e(LogWrapper.LOG_TAG, "Trackingplan start failed: " + e.getMessage());
+            logger.error("Trackingplan start failed: " + e.getMessage());
         }
     }
 
@@ -103,8 +118,7 @@ final public class Trackingplan {
             }
 
         } catch (Exception e) {
-            // Use Log because AndroidLogger may not be enabled
-            Log.e(LogWrapper.LOG_TAG, "Trackingplan stop failed: " + e.getMessage());
+            logger.error("Trackingplan stop failed: " + e.getMessage());
         }
     }
 
@@ -148,7 +162,6 @@ final public class Trackingplan {
 
         @SuppressWarnings("unused")
         public ConfigInitializer enableDebug() {
-            AndroidLogger.getInstance().setLogcatEnabled(true);
             configBuilder.enableDebug();
             return this;
         }
@@ -186,6 +199,9 @@ final public class Trackingplan {
         @MainThread
         public void start(Context ignoredContext) {
             TrackingplanConfig config = configBuilder.build();
+            if (config.isDebugEnabled()) {
+                AndroidLogger.setLogLevel(AndroidLogger.LogLevel.VERBOSE);
+            }
             Trackingplan.start(config);
         }
     }

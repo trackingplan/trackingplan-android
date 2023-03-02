@@ -32,171 +32,166 @@
 //      https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/AndroidLogger.java
 package com.trackingplan.client.sdk.util;
 
-import androidx.annotation.VisibleForTesting;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+
 import java.util.Locale;
 
 /**
- * Copy of https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/LogWrapper.java
+ * Copy of https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/AndroidLogger.java
  */
 public class AndroidLogger {
 
+    public enum LogLevel {
+        VERBOSE,
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR
+    }
+
+    private static LogLevel logLevel = LogLevel.INFO;
     private static volatile AndroidLogger instance;
 
-    private final LogWrapper logWrapper;
-
-    private boolean isLogcatEnabled = true;
+    private final String logTag;
 
     public static AndroidLogger getInstance() {
         if (instance == null) {
             synchronized (AndroidLogger.class) {
                 if (instance == null) {
-                    instance = new AndroidLogger();
+                    instance = new AndroidLogger("Trackingplan");
                 }
             }
         }
-
         return instance;
     }
 
-    @VisibleForTesting
-    public AndroidLogger(LogWrapper logWrapper) {
-        this.logWrapper = (logWrapper == null) ? LogWrapper.getInstance() : logWrapper;
+    public AndroidLogger(@NonNull String tag) {
+        logTag = tag;
     }
 
-    private AndroidLogger() {
-        this(null);
-    }
-
-    public void setLogcatEnabled(boolean logcatEnabled) {
-        this.isLogcatEnabled = logcatEnabled;
+    public static void setLogLevel(LogLevel logLevel) {
+        AndroidLogger.logLevel = logLevel;
     }
 
     /**
-     * Returns whether console logging is enabled by the developer or not.
-     *
-     * @see #setLogcatEnabled(boolean)
-     */
-    public boolean isLogcatEnabled() {
-        return isLogcatEnabled;
-    }
-
-    /**
-     * Logs a DEBUG message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a DEBUG message to the console (logcat).
      *
      * @param msg The string to log.
      */
     public void debug(String msg) {
-        if (isLogcatEnabled) {
-            logWrapper.d(msg);
+        if (LogLevel.DEBUG.compareTo(logLevel) >= 0) {
+            Log.d(logTag, msg);
         }
     }
 
     /**
-     * Logs a DEBUG message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a DEBUG message to the console (logcat).
      *
      * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
      * @param args Arguments referenced by the format specifiers in the format string.
      * @see String#format(Locale, String, Object...)
      */
     public void debug(String format, Object... args) {
-        if (isLogcatEnabled) {
-            logWrapper.d(String.format(Locale.ENGLISH, format, args));
+        if (LogLevel.DEBUG.compareTo(logLevel) >= 0) {
+            debug(String.format(Locale.ENGLISH, format, args));
         }
     }
 
     /**
-     * Logs a VERBOSE message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a VERBOSE message to the console (logcat).
      *
      * @param msg The string to log.
      */
     public void verbose(String msg) {
-        if (isLogcatEnabled) {
-            logWrapper.v(msg);
+        if (LogLevel.VERBOSE.compareTo(logLevel) >= 0) {
+            Log.v(logTag, msg);
         }
     }
 
     /**
-     * Logs a VERBOSE message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a VERBOSE message to the console (logcat).
      *
      * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
      * @param args Arguments referenced by the format specifiers in the format string.
      * @see String#format(Locale, String, Object...)
      */
     public void verbose(String format, Object... args) {
-        if (isLogcatEnabled) {
-            logWrapper.v(String.format(Locale.ENGLISH, format, args));
+        if (LogLevel.VERBOSE.compareTo(logLevel) >= 0) {
+            verbose(String.format(Locale.ENGLISH, format, args));
         }
     }
 
     /**
-     * Logs a INFO message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a INFO message to the console (logcat).
      *
      * @param msg The string to log.
      */
     public void info(String msg) {
-        if (isLogcatEnabled) {
-            logWrapper.i(msg);
+        if (LogLevel.INFO.compareTo(logLevel) >= 0) {
+            Log.i(logTag, msg);
         }
     }
 
     /**
-     * Logs an INFO message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs an INFO message to the console (logcat).
      *
      * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
      * @param args Arguments referenced by the format specifiers in the format string.
      * @see String#format(Locale, String, Object...)
      */
     public void info(String format, Object... args) {
-        if (isLogcatEnabled) {
-            logWrapper.i(String.format(Locale.ENGLISH, format, args));
+        if (LogLevel.INFO.compareTo(logLevel) >= 0) {
+            info(String.format(Locale.ENGLISH, format, args));
         }
     }
 
     /**
-     * Logs a WARN message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a WARN message to the console (logcat).
      *
      * @param msg The string to log.
      */
     public void warn(String msg) {
-        if (isLogcatEnabled) {
-            logWrapper.w(msg);
+        if (LogLevel.WARN.compareTo(logLevel) >= 0) {
+            Log.w(logTag, msg);
         }
     }
 
     /**
-     * Logs a WARN message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a WARN message to the console (logcat).
      *
      * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
      * @param args Arguments referenced by the format specifiers in the format string.
      * @see String#format(Locale, String, Object...)
      */
     public void warn(String format, Object... args) {
-        if (isLogcatEnabled) {
-            logWrapper.w(String.format(Locale.ENGLISH, format, args));
+        if (LogLevel.WARN.compareTo(logLevel) >= 0) {
+            warn(String.format(Locale.ENGLISH, format, args));
         }
     }
 
     /**
-     * Logs a ERROR message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs a ERROR message to the console (logcat).
      *
      * @param msg The string to log.
      */
     public void error(String msg) {
-        if (isLogcatEnabled) {
-            logWrapper.e(msg);
+        if (LogLevel.ERROR.compareTo(logLevel) >= 0) {
+            Log.e(logTag, msg);
         }
     }
 
     /**
-     * Logs an ERROR message to the console (logcat) if {@link #isLogcatEnabled} is {@code true}.
+     * Logs an ERROR message to the console (logcat).
      *
      * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
      * @param args Arguments referenced by the format specifiers in the format string.
      * @see String#format(Locale, String, Object...)
      */
     public void error(String format, Object... args) {
-        if (isLogcatEnabled) {
-            logWrapper.e(String.format(Locale.ENGLISH, format, args));
+        if (LogLevel.ERROR.compareTo(logLevel) >= 0) {
+            error(String.format(Locale.ENGLISH, format, args));
         }
     }
 }

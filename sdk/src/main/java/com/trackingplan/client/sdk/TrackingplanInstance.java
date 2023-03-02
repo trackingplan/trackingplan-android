@@ -169,7 +169,8 @@ final public class TrackingplanInstance {
                 logger.info("DryRun mode enabled");
             }
 
-            logger.info("Configuration: " + config);
+
+            logger.debug("Configuration: " + config);
 
             this.config = config;
 
@@ -193,6 +194,8 @@ final public class TrackingplanInstance {
                 startSession(sessionData);
             }
             // else Session initialization will be triggered in processRequest
+
+            logger.info("Trackingplan started");
         });
     }
 
@@ -228,7 +231,7 @@ final public class TrackingplanInstance {
             try {
                 task.run();
             } catch (Exception ex) {
-                logger.warn("RunSync failed: " + ex.getMessage());
+                logger.error("RunSync failed: " + ex.getMessage());
             }
         });
     }
@@ -239,7 +242,7 @@ final public class TrackingplanInstance {
             try {
                 task.run();
             } catch (Exception ex) {
-                logger.warn("RunSync failed: " + ex.getMessage());
+                logger.error("RunSync failed: " + ex.getMessage());
             }
         };
 
@@ -329,7 +332,7 @@ final public class TrackingplanInstance {
         final CountDownLatch lock = new CountDownLatch(1);
         runSync(() -> {
             if (!isConfigured() || SessionDataStorage.hasExpired(currentSessionData) || !currentSessionData.isTrackingEnabled()) {
-                logger.info("Processing queue ignored because of missing configuration");
+                logger.debug("Processing queue ignored because of missing configuration");
                 lock.countDown();
                 return;
             }
@@ -364,7 +367,7 @@ final public class TrackingplanInstance {
 
         this.currentSessionData = sessionData;
 
-        logger.info("Session initialized with data: " + sessionData.toString());
+        logger.debug("Session initialized with data: " + sessionData.toString());
 
         if (!sessionData.isTrackingEnabled()) {
             long remainingTime = SessionDataStorage.remainingTimeTillExpiration(sessionData);
@@ -388,7 +391,7 @@ final public class TrackingplanInstance {
         logger.warn("Request processing is suspended temporarily for " + (duration / 1000) + " seconds");
         logger.info("Tracking is disabled for this session.");
         if (numPendingRequests > 0) {
-            logger.info(numPendingRequests + " pending intercepted requests were discarded");
+            logger.debug(numPendingRequests + " pending intercepted requests were discarded");
         }
     }
 
@@ -411,7 +414,7 @@ final public class TrackingplanInstance {
             } else {
                 suspendRequestProcessingTemporarily(FETCH_CONFIG_RETRY_INTERVAL_MS);
                 downloadingSessionData = false;
-                logger.warn("Fetching session data failed: " + error.getMessage());
+                logger.error("Fetching session data failed: " + error.getMessage());
             }
         });
     }
@@ -488,7 +491,7 @@ final public class TrackingplanInstance {
         @Override
         public void onStop(@NonNull LifecycleOwner owner) {
             DefaultLifecycleObserver.super.onStop(owner);
-            logger.info("Processing queue before going to background");
+            logger.debug("Processing queue before going to background");
             // Do not wait as this is called from MainThread
             flushQueue(0);
         }

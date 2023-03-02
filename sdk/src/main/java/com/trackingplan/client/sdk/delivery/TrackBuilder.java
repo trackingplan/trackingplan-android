@@ -47,8 +47,8 @@ final public class TrackBuilder {
             try {
                 payload.put(createRawTrack(request, samplingRate));
             } catch (JSONException e) {
-                logger.warn("Cannot convert request to raw track: " + e.getMessage());
-                logger.info("Request information: " + request);
+                logger.error("Cannot convert request to raw track: " + e.getMessage());
+                logger.debug("Request information: " + request);
             }
         }
 
