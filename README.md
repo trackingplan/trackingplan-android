@@ -193,7 +193,7 @@ Or in Kotlin:
 
 ```kotlin
 @get:Rule
-val trackingplanRule = TrackingplanJUnit.init("TP369979", "OnDemandBuild")
+val trackingplanRule = TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
     .tags(mapOf(
         "test_title" to "My Test",
         "test_session_name" to "My Session"
