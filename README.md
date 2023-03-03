@@ -185,7 +185,7 @@ public TrackingplanRule trackingplanRule =
                 put("test_title", "My test");
                 put("test_session_name", "My session");
             }})
-            .dryRun()
+            //.dryRun()
             .newRule();
 ```
 
@@ -198,6 +198,7 @@ val trackingplanRule = TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
         "test_title" to "My Test",
         "test_session_name" to "My Session"
     ))
+    //.dryRun()
     .newRule()
 ```
 
