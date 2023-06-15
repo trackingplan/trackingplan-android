@@ -1,11 +1,10 @@
-package com.trackingplan.examples.urlconnection;
+package com.example.gtm;
 
 import android.app.Application;
 
 import com.trackingplan.client.sdk.Trackingplan;
 
 import java.util.HashMap;
-
 public class ExampleApplication extends Application {
     @Override
     public void onCreate() {
