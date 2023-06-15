@@ -15,11 +15,6 @@ import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.JSONUtils;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.nio.charset.StandardCharsets;
-
 final public class FirebaseAnalytics {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -90,7 +85,7 @@ final public class FirebaseAnalytics {
         try {
             InstrumentRequestBuilder builder = makeBuilder(fa);
             builder.setHttpMethod("POST");
-            byte[] payload = encodeJsonPayload(createPayload(methodName, params));
+            byte[] payload = JSONUtils.encodeJsonPayload(JSONUtils.createPayload(methodName, params, 2));
             builder.setRequestPayload(payload);
 
             builder.setRequestPayloadNumBytes(payload.length);
@@ -104,22 +99,5 @@ final public class FirebaseAnalytics {
         InstrumentRequestBuilder builder = new FirebaseInstrumentRequestBuilder(fa, TrackingplanInstance.getInstance());
         builder.setUrl("code://com.google.firebase.analytics.FirebaseAnalytics");
         return builder;
-    }
-
-    private static byte[] encodeJsonPayload(JSONObject payload) {
-        return payload.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private static JSONObject createPayload(String name, Bundle bundle) throws JSONException {
-
-        JSONObject params = JSONUtils.makeJSONObject(bundle);
-
-        JSONObject payload = new JSONObject();
-        payload.put("version", 2);
-        payload.put("method", name);
-        payload.put("params", params);
-        payload.put("ts_millis", System.currentTimeMillis());
-
-        return payload;
     }
 }

@@ -6,7 +6,7 @@ plugins {
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "1.5.0-SNAPSHOT"
+    TrackingplanVersion = "1.6.0-SNAPSHOT"
 }
 
 task clean(type: Delete) {

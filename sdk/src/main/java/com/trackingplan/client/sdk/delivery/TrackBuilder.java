@@ -69,6 +69,7 @@ final public class TrackBuilder {
         rawTrack.put("tp_id", config.getTpId());
         rawTrack.put("environment", config.getEnvironment());
         rawTrack.put("provider", request.getProvider());
+        rawTrack.put("ts", request.getCreatedTimeMs());
 
         var requestJson = new JSONObject();
         rawTrack.put("request", requestJson);

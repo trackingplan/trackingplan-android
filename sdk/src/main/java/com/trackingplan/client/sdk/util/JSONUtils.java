@@ -2,6 +2,7 @@
 package com.trackingplan.client.sdk.util;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
@@ -9,9 +10,40 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 public class JSONUtils {
+
+    public static JSONObject createPayload(String name, Bundle bundle, int version) throws JSONException {
+        JSONObject params = makeJSONObject(bundle);
+        JSONObject payload = new JSONObject();
+        payload.put("version", version);
+        payload.put("method", name);
+        payload.put("params", params);
+        return payload;
+    }
+
+    public static byte[] encodeJsonPayload(@NonNull JSONObject payload) {
+        return payload.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static JSONArray makeJSONArray(@NonNull Object[] array) throws JSONException {
+
+        JSONArray jsonArray = new JSONArray();
+
+        for (Object item : array) {
+            if (item instanceof Bundle) {
+                jsonArray.put(makeJSONObject((Bundle) item));
+            } else if (item.getClass().isArray()) {
+                jsonArray.put(makeJSONArray((Object[]) item));
+            } else {
+                jsonArray.put(item.toString());
+            }
+        }
+
+        return jsonArray;
+    }
 
     public static JSONObject makeJSONObject(@NonNull Bundle bundle) throws JSONException {
 
@@ -31,23 +63,6 @@ public class JSONUtils {
         }
 
         return jsonObject;
-    }
-
-    public static JSONArray makeJSONArray(@NonNull Object[] array) throws JSONException {
-
-        JSONArray jsonArray = new JSONArray();
-
-        for (Object item : array) {
-            if (item instanceof Bundle) {
-                jsonArray.put(makeJSONObject((Bundle) item));
-            } else if (item.getClass().isArray()) {
-                jsonArray.put(makeJSONArray((Object[]) item));
-            } else {
-                jsonArray.put(item.toString());
-            }
-        }
-
-        return jsonArray;
     }
 
     public static JSONObject assign(@NonNull JSONObject target, @NonNull JSONObject source) throws JSONException {

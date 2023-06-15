@@ -94,6 +94,8 @@ final public class TrackingplanClient {
         // TODO: Compress rawTracks before sending
         HttpURLConnection conn = makeNewTracksConnection(config.getTracksEndPoint() + config.getTpId());
 
+        logger.verbose("Connecting to endpoint: " + conn.getURL().toString());
+
         try {
             try (OutputStream out = conn.getOutputStream()) {
                 out.write(payload);

@@ -61,6 +61,7 @@ dependencies {
 
     compileOnly "com.google.firebase:firebase-analytics:19.0.1"
     compileOnly "com.squareup.okhttp3:okhttp:3.14.9"
+    compileOnly 'com.google.android.gms:play-services-tagmanager-v4-impl:18.0.2'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

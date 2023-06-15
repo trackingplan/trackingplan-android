@@ -18,7 +18,6 @@ import java.util.Map;
  * Immutable class
  */
 final public class HttpRequest {
-
     private String url = "";
     private String method = "GET";
     private String userAgent = "";
@@ -94,9 +93,10 @@ final public class HttpRequest {
     }
 
     /**
-     * Get creation time in milliseconds relative to boot time (including time spent in sleep).
+     * Get creation time in milliseconds as the difference, measured in milliseconds, between the
+     * current time and midnight, January 1, 1970 UTC.
      *
-     * @return milliseconds relative to boot time
+     * @return milliseconds relative to January 1, 1970 UTC.
      */
     public long getCreatedTimeMs() {
         return createdTimeMs;
@@ -208,7 +208,7 @@ final public class HttpRequest {
 
         public HttpRequest build() {
             HttpRequest result = this.request;
-            result.createdTimeMs = SystemClock.elapsedRealtime();
+            result.createdTimeMs = System.currentTimeMillis();
             reset();
             return result;
         }

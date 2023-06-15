@@ -12,6 +12,7 @@ import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserI
 import com.trackingplan.client.adapter.core.asm.config.FirebaseAnalyticsSetUserPropertyIC;
 import com.trackingplan.client.adapter.core.asm.config.OkHttpClientCallEnqueueIC;
 import com.trackingplan.client.adapter.core.asm.config.OkHttpClientCallExecuteIC;
+import com.trackingplan.client.adapter.core.asm.config.TagManagerDataLayerPushIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionGetContentClassIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionGetContentIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionOpenConnectionIC;
@@ -32,6 +33,7 @@ public class TransformationConfigFactory {
             new UrlConnectionGetContentClassIC(),
             new OkHttpClientCallExecuteIC(),
             new OkHttpClientCallEnqueueIC(),
+            new TagManagerDataLayerPushIC(),
             new FirebaseAnalyticsLogEventIC(),
             new FirebaseAnalyticsSetAnalyticsCollectionEnabledIC(),
             new FirebaseAnalyticsSetCurrentScreenIC(),

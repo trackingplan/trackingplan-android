@@ -134,8 +134,8 @@ public abstract class InstrumentRequestBuilder {
         String name = null;
 
         try {
-            // Note: Works without any extra permission in Android 5.0+
-            // Note: This API is deprecated in newer versions of Android
+            // NOTE: Works without any extra permission in Android 5.0+
+            // NOTE: This API is deprecated in newer versions of Android
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             ComponentName cn = am.getRunningTasks(1).get(0).topActivity;
             name = cn.getClassName();

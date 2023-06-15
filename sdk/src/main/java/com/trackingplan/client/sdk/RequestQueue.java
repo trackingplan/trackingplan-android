@@ -102,7 +102,7 @@ final class RequestQueue {
             final List<HttpRequest> batch = takeElements(queue);
             final var batchSender = new TaskRunnerBatchSender(tpInstance.getClient(), tpInstance.getTaskRunner());
             batchSender.send(batch, samplingRate, lastBatchId, (long batchId) -> {
-                // Note: This callback is executed in Trackingplan thread
+                // NOTE: This callback is executed in Trackingplan thread
                 int numBatchesSent = batchesSentCounter.addAndGet(1);
                 if (numBatchesSent == numBatchesToSend) {
                     logger.debug("Batch sender finished (" + numBatchesSent + " batches sent)");

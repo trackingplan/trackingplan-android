@@ -84,7 +84,7 @@ final public class TrackingplanInstance {
     private final Map<String, String> providers;
     private final RequestQueue requestQueue;
 
-    // Note: Application context has the same lifecycle as the app. So no leak is possible
+    // NOTE: Application context has the same lifecycle as the app. So no leak is possible
     private final Context context;
 
     private TrackingplanConfig config;
@@ -431,17 +431,17 @@ final public class TrackingplanInstance {
 
     private void initRequestDestination(HttpRequest request) {
 
-        var whitelist = Arrays.asList("okhttp", "urlconnection");
+        var whitelistInstruments = Arrays.asList("okhttp", "urlconnection");
 
-        if (!whitelist.contains(request.getInterceptionModule())) {
+        if (!whitelistInstruments.contains(request.getInterceptionModule())) {
             return;
         }
 
-        for (String matchRule : providers.keySet()) {
-            if (!request.getUrl().contains(matchRule)) {
+        for (String partialUrl : providers.keySet()) {
+            if (!request.getUrl().contains(partialUrl)) {
                 continue;
             }
-            var provider = providers.get(matchRule);
+            var provider = providers.get(partialUrl);
             if (provider != null) {
                 request.setProvider(provider);
             }
