@@ -33,12 +33,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.6.0` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.6.1` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {   
     // ...
-    classpath "com.trackingplan.client:adapter:1.6.0"
+    classpath "com.trackingplan.client:adapter:1.6.1"
     // ...
 }
 ```
@@ -54,11 +54,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.6.0'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.6.1'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.6.0'
+    implementation 'com.trackingplan.client:sdk:1.6.1'
     // ...
 }
 ```
@@ -159,12 +159,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.6.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:1.6.1` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
 
 ```gradle
 dependencies {
     // ...
-    androidTestImplementation "com.trackingplan.client:junit-tools:1.6.0"
+    androidTestImplementation "com.trackingplan.client:junit-tools:1.6.1"
     // ...
 }
 ```

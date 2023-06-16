@@ -10,6 +10,7 @@ import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 import com.trackingplan.client.sdk.util.JSONUtils;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 final public class DataLayer {
@@ -69,13 +70,25 @@ final public class DataLayer {
             var value = entry.getValue();
 
             try {
-                if (value instanceof Map) {
+                if (value == null) {
+                    bundle.putString(key, "null");
+                } else if (value instanceof Map) {
                     Map map = (Map) value;
                     bundle.putBundle(key, getBundleFromMap(map));
-                } else if (value != null) {
-                    bundle.putString(key, value.toString());
+                } else if (value.getClass().isArray()) {
+                    bundle.putSerializable(key, (Object[]) value);
+                } else if (value instanceof ArrayList) {
+                    bundle.putSerializable(key, convertArrayListToArray((ArrayList)value));
+                } else if (value instanceof Integer) {
+                    bundle.putInt(key, (Integer) value);
+                } else if (value instanceof Float) {
+                    bundle.putFloat(key, (Float) value);
+                } else if (value instanceof Double) {
+                    bundle.putDouble(key, (Double) value);
+                } else if (value instanceof Boolean) {
+                    bundle.putBoolean(key, (Boolean) value);
                 } else {
-                    bundle.putString(key, "null");
+                    bundle.putString(key, value.toString());
                 }
             } catch (Exception ex) {
                 logger.warn("Failed to convert map to bundle: " + ex.getMessage());
@@ -83,5 +96,20 @@ final public class DataLayer {
         }
 
         return bundle;
+    }
+
+    private static Object[] convertArrayListToArray(ArrayList<Object> arrayList) {
+        Object[] array = new Object[arrayList.size()];
+        for (int i = 0; i < arrayList.size(); i++) {
+            Object item = arrayList.get(i);
+            if (item instanceof Map) {
+                array[i] = getBundleFromMap((Map<String, Object>) item);
+            } else if (item instanceof ArrayList) {
+                array[i] = convertArrayListToArray((ArrayList<Object>) item);
+            } else {
+                array[i] = item;
+            }
+        }
+        return array;
     }
 }

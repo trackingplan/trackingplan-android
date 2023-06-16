@@ -10,7 +10,6 @@ import com.google.android.gms.tagmanager.DataLayer;
 import com.google.android.gms.tagmanager.TagManager;
 import com.google.android.material.snackbar.Snackbar;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
@@ -26,7 +25,6 @@ import com.example.gtm.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
@@ -76,7 +74,14 @@ public class MainActivity extends AppCompatActivity {
                 var params = DataLayer.mapOf(
                         "buttonName", "Action",
                         "country", "ES",
-                        "nested", DataLayer.mapOf("item1", "foo", "item2", "bar")
+                        "nested", DataLayer.mapOf("item1", "foo", "item2", "bar"),
+                        "array_list", DataLayer.listOf("item1", "item2", "item3", 44),
+                        "native_array", new Object[]{"hola", "adios", 3, false},
+                        "ecommerce", DataLayer.mapOf(
+                                "impressions", DataLayer.listOf(
+                                        DataLayer.mapOf("name", "foo", "price", 50),
+                                        DataLayer.mapOf("name", "bar", "price", 45)
+                                ))
                 );
                 dataLayer.pushEvent("buttonClick", params);
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)

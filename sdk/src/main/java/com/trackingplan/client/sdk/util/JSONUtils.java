@@ -2,7 +2,6 @@
 package com.trackingplan.client.sdk.util;
 
 import android.os.Bundle;
-import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
@@ -33,12 +32,37 @@ public class JSONUtils {
         JSONArray jsonArray = new JSONArray();
 
         for (Object item : array) {
-            if (item instanceof Bundle) {
+            if (item == null) {
+                jsonArray.put(null);
+            } else if (item instanceof Bundle) {
                 jsonArray.put(makeJSONObject((Bundle) item));
             } else if (item.getClass().isArray()) {
                 jsonArray.put(makeJSONArray((Object[]) item));
+            } else if (item instanceof Iterable) {
+                jsonArray.put(makeJSONArray((Iterable) item));
             } else {
-                jsonArray.put(item.toString());
+                jsonArray.put(item);
+            }
+        }
+
+        return jsonArray;
+    }
+
+    public static JSONArray makeJSONArray(@NonNull Iterable iterator) throws JSONException {
+
+        JSONArray jsonArray = new JSONArray();
+
+        for (Object item : iterator) {
+            if (item == null) {
+                jsonArray.put(null);
+            } else if (item instanceof Bundle) {
+                jsonArray.put(makeJSONObject((Bundle) item));
+            } else if (item.getClass().isArray()) {
+                jsonArray.put(makeJSONArray((Object[]) item));
+            } else if (item instanceof Iterable) {
+                jsonArray.put(makeJSONArray((Iterable) item));
+            } else {
+                jsonArray.put(item);
             }
         }
 
@@ -53,10 +77,14 @@ public class JSONUtils {
 
             Object value = bundle.get(key);
 
-            if (value instanceof Bundle) {
+            if (value == null) {
+                jsonObject.put(key, null);
+            } else if (value instanceof Bundle) {
                 jsonObject.put(key, makeJSONObject((Bundle) value));
             } else if (value.getClass().isArray()) {
                 jsonObject.put(key, makeJSONArray((Object[]) value));
+            } else if (value instanceof Iterable) {
+                jsonObject.put(key, makeJSONArray((Iterable) value));
             } else {
                 jsonObject.put(key, value);
             }
