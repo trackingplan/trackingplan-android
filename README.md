@@ -6,7 +6,7 @@
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
-- [Trackingplan for QA](#trackingplan-for-qa)
+- [Trackingplan for Regression Testing](#trackingplan-for-regression-testing)
 - [Building from source code](#building-from-source-code)
 - [Need help?](#need-help)
 - [Learn more](#learn-more)
@@ -155,7 +155,7 @@ buildTypes {
 }
 ```
 
-## Trackingplan for QA
+## Trackingplan for Regression Testing
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
