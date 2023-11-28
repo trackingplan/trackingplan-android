@@ -33,7 +33,7 @@ public class JSONUtils {
 
         for (Object item : array) {
             if (item == null) {
-                jsonArray.put(null);
+                jsonArray.put(JSONObject.NULL);
             } else if (item instanceof Bundle) {
                 jsonArray.put(makeJSONObject((Bundle) item));
             } else if (item.getClass().isArray()) {
@@ -54,7 +54,7 @@ public class JSONUtils {
 
         for (Object item : iterator) {
             if (item == null) {
-                jsonArray.put(null);
+                jsonArray.put(JSONObject.NULL);
             } else if (item instanceof Bundle) {
                 jsonArray.put(makeJSONObject((Bundle) item));
             } else if (item.getClass().isArray()) {
@@ -78,7 +78,7 @@ public class JSONUtils {
             Object value = bundle.get(key);
 
             if (value == null) {
-                jsonObject.put(key, null);
+                jsonObject.put(key, JSONObject.NULL);
             } else if (value instanceof Bundle) {
                 jsonObject.put(key, makeJSONObject((Bundle) value));
             } else if (value.getClass().isArray()) {

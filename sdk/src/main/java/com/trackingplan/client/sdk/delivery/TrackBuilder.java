@@ -135,7 +135,7 @@ final public class TrackBuilder {
         byte[] payload = request.getPayloadData();
 
         if (payload.length == 0) {
-            requestJson.put("post_payload", null);
+            requestJson.put("post_payload", JSONObject.NULL);
             return;
         }
 

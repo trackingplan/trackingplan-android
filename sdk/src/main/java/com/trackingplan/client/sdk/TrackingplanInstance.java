@@ -468,6 +468,7 @@ final public class TrackingplanInstance {
             put("trk.kissmetrics.io", "kissmetrics");
             put("px.ads.linkedin.com", "linkedin");
             put("api.mixpanel.com", "mixpanel");
+            put("logx.optimizely.com/v1/events", "optimizely");
             put("ct.pinterest.com", "pinterest");
             put("pdst.fm", "podsights");
             put("quantserve.com", "quantserve");

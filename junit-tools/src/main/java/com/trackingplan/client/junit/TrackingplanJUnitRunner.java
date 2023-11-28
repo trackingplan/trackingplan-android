@@ -5,7 +5,6 @@ import android.app.Application;
 import androidx.test.runner.AndroidJUnitRunner;
 
 import com.trackingplan.client.sdk.Trackingplan;
-import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.util.AndroidLogger;
 
 public class TrackingplanJUnitRunner extends AndroidJUnitRunner {

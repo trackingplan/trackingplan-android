@@ -32,12 +32,11 @@ final public class Trackingplan {
         stop(false);
     }
 
-    @VisibleForTesting
-
     /**
      * Tells Trackingplan SDK that it is running as part of an instrumented test. This mode inhibits
      * Trackingplan initialization from app (see {@link Trackingplan#init#start})
      */
+    @VisibleForTesting
     public static void enableInstrumentedTestMode() {
 
         final var instance = TrackingplanInstance.getInstance();
