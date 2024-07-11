@@ -5,7 +5,8 @@ import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.delivery.TaskRunnerBatchSender;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 final class RequestQueue {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     // TODO: Expose this through Advanced Options
     private static final long BATCH_TIMEOUT_MS = 30 * 1000;
@@ -46,10 +47,10 @@ final class RequestQueue {
     }
 
     /**
-     * @see RequestQueue#processQueue(float, boolean, Runnable)
+     * @see RequestQueue#processQueue(TrackingplanSession, boolean, Runnable)
      */
-    public void processQueue(float samplingRate) {
-        processQueue(samplingRate, false, null);
+    public void processQueue(@NonNull final TrackingplanSession session) {
+        processQueue(session, false, null);
     }
 
     /**
@@ -63,8 +64,11 @@ final class RequestQueue {
      * <p>
      * NOTE: This method must be called from Trackingplan thread.
      */
-    void processQueue(float samplingRate, boolean forceSendBatch, Runnable callback) {
-
+    public void processQueue(
+            @NonNull final TrackingplanSession session,
+            boolean forceSendBatch,
+            final Runnable callback
+    ) {
         if (shuttingDown) {
             logger.debug("Process queue ignored. Queue is stopped");
             if (callback != null) callback.run();
@@ -101,7 +105,7 @@ final class RequestQueue {
         for (int i = 0; i < numBatchesToSend; i++) {
             final List<HttpRequest> batch = takeElements(queue);
             final var batchSender = new TaskRunnerBatchSender(tpInstance.getClient(), tpInstance.getTaskRunner());
-            batchSender.send(batch, samplingRate, lastBatchId, (long batchId) -> {
+            batchSender.send(batch, session, lastBatchId, (long batchId) -> {
                 // NOTE: This callback is executed in Trackingplan thread
                 int numBatchesSent = batchesSentCounter.addAndGet(1);
                 if (numBatchesSent == numBatchesToSend) {
@@ -120,7 +124,7 @@ final class RequestQueue {
             // send all these requests if BATCH_TIMEOUT_MS have passed and no batch was sent in
             // between.
             logger.verbose("Queue not full yet (" + queue.size() + " requests).");
-            startWatcher(samplingRate);
+            startWatcher(session, callback);
         }
     }
 
@@ -139,7 +143,7 @@ final class RequestQueue {
      * If a watcher already existed, no watcher is started and the deadline of the previous
      * one is not changed.
      */
-    private void startWatcher(float samplingRate) {
+    private void startWatcher(@NonNull final TrackingplanSession session, final Runnable callback) {
 
         if (watcher != null) {
             logger.verbose("Watcher is already started");
@@ -151,7 +155,7 @@ final class RequestQueue {
         watcher = tpInstance.runSyncDelayed(BATCH_TIMEOUT_MS, () -> {
             watcher = null;
             logger.debug("Watcher timed out. Forcing the processing of the queue...");
-            processQueue(samplingRate, true, null);
+            processQueue(session, true, callback);
         });
     }
 

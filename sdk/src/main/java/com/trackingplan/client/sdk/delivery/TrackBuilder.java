@@ -12,7 +12,8 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.BuildConfig;
 import com.trackingplan.client.sdk.TrackingplanConfig;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.StringUtils;
 
 import org.json.JSONArray;
@@ -29,7 +30,7 @@ final public class TrackBuilder {
     private static final String HEADER_CONTENT_ENCODING = "content-encoding";
     private static final String HEADER_CONTENT_TYPE = "content-type";
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private final TrackingplanConfig config;
     private final String appVersion;
@@ -39,13 +40,13 @@ final public class TrackBuilder {
         this.appVersion = getAppVersion(context);
     }
 
-    public JSONArray createJsonPayload(List<HttpRequest> requests, float samplingRate) throws JSONException {
+    public JSONArray createJsonPayload(List<HttpRequest> requests, @NonNull final TrackingplanSession session) throws JSONException {
 
         JSONArray payload = new JSONArray();
 
         for (HttpRequest request : requests) {
             try {
-                payload.put(createRawTrack(request, samplingRate));
+                payload.put(createRawTrack(request, session));
             } catch (JSONException e) {
                 logger.error("Cannot convert request to raw track: " + e.getMessage());
                 logger.debug("Request information: " + request);
@@ -59,7 +60,7 @@ final public class TrackBuilder {
         return payload;
     }
 
-    private JSONObject createRawTrack(HttpRequest request, float samplingRate) throws JSONException {
+    private JSONObject createRawTrack(HttpRequest request, @NonNull final TrackingplanSession session) throws JSONException {
 
         String device = Build.MANUFACTURER + " " + Build.MODEL;
         String platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
@@ -104,7 +105,8 @@ final public class TrackBuilder {
             }
         }
 
-        rawTrack.put("sampling_rate", samplingRate);
+        rawTrack.put("sampling_rate", session.getSamplingRate());
+        rawTrack.put("session_id", session.getSessionId());
         rawTrack.put("sdk", "android");
         rawTrack.put("sdk_version", BuildConfig.SDK_VERSION);
 

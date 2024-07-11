@@ -4,14 +4,11 @@ package com.trackingplan.client.sdk.interception;
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.TrackingplanInstance;
-import com.trackingplan.client.sdk.util.AndroidLogger;
-
-import java.net.URI;
-import java.net.URISyntaxException;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 public final class HttpInstrumentRequestBuilder extends InstrumentRequestBuilder {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     public HttpInstrumentRequestBuilder(TrackingplanInstance tpInstance, @NonNull String instrument) {
         super(tpInstance, instrument);

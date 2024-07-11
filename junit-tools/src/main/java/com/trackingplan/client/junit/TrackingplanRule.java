@@ -3,7 +3,7 @@ package com.trackingplan.client.junit;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -14,7 +14,7 @@ import java.util.HashMap;
 @VisibleForTesting
 public class TrackingplanRule implements TestRule {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private final TrackingplanJUnit.TrackingplanInitializer initializer;
     private final long waitTimeMs;

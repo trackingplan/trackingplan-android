@@ -7,7 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.JSONUtils;
 
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 final public class DataLayer {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private static boolean analyticsEnabled = true;
 

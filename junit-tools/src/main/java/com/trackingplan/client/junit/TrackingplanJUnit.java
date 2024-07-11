@@ -7,14 +7,15 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.trackingplan.client.sdk.Trackingplan;
 import com.trackingplan.client.sdk.TrackingplanConfig;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.TrackingplanInstance;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 import java.util.Map;
 
 @VisibleForTesting
 public class TrackingplanJUnit {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     /**
      * Initializes Trackingplan for JUnit
@@ -50,14 +51,17 @@ public class TrackingplanJUnit {
      */
     public static void doSendAndStop(long waitTimeMs) throws InterruptedException {
         logger.verbose("TrackingplanJUnit do send and stop...");
+
         // Wait for analytic requests to be triggered
         if (waitTimeMs > 0) {
             Thread.sleep(waitTimeMs);
         }
+
         // Ensures that all of the intercepted analytic requests are sent to Trackingplan
         Trackingplan.flushQueue();
-        // Clear initialization state so that the next init call works
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(Trackingplan::clearInitState);
+
+        // Stop trackingplan and clear initialization state so that the next init call works
+        Trackingplan.clearInitState();
     }
 
     public static class TrackingplanInitializer {
@@ -66,7 +70,7 @@ public class TrackingplanJUnit {
         private long waitTimeMs = 1500;
 
         private TrackingplanInitializer(@NonNull String tpId, @NonNull String environment) {
-            AndroidLogger.setLogLevel(AndroidLogger.LogLevel.VERBOSE);
+            AndroidLog.setLogLevel(AndroidLog.LogLevel.VERBOSE);
             configBuilder = TrackingplanConfig.newConfig(tpId)
                     .environment(environment)
                     .enableDebug()

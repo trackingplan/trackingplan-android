@@ -1,8 +1,8 @@
 package com.trackingplan.client.sdk.interception.tagmanager;
 
+import com.google.android.gms.tagmanager.DataLayer;
 import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
-import com.google.android.gms.tagmanager.DataLayer;
 
 public class DataLayerInstrumentRequestBuilder extends InstrumentRequestBuilder {
 

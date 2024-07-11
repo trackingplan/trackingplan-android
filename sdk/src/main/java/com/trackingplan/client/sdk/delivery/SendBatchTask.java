@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.TrackingplanClient;
 import com.trackingplan.client.sdk.interception.HttpRequest;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -26,21 +27,21 @@ final class SendBatchTask implements Callable<SendBatchTask.BatchResult> {
 
     private final List<HttpRequest> batch;
     private final TrackingplanClient client;
-    private final float samplingRate;
+    private final TrackingplanSession session;
 
     public SendBatchTask(
-            @NonNull List<HttpRequest> batch,
-            @NonNull TrackingplanClient client,
-            float samplingRate
+            @NonNull final List<HttpRequest> batch,
+            @NonNull final TrackingplanClient client,
+            @NonNull final TrackingplanSession session
     ) {
         this.batch = batch;
         this.client = client;
-        this.samplingRate = samplingRate;
+        this.session = session;
     }
 
     @Override
     public BatchResult call() throws Exception {
-        int numRequestsSent = client.sendTracks(batch, samplingRate);
+        int numRequestsSent = client.sendTracks(batch, this.session);
         int numFailedRequests = batch.size() - numRequestsSent;
         return new BatchResult(numRequestsSent, numFailedRequests);
     }

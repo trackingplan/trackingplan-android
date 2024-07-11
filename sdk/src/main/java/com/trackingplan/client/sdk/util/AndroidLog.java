@@ -30,18 +30,22 @@
 //
 // You may see the original Work at
 //      https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/AndroidLogger.java
+
 package com.trackingplan.client.sdk.util;
 
-import android.util.Log;
+import androidx.annotation.VisibleForTesting;
 
-import androidx.annotation.NonNull;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 /**
- * Copy of https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/AndroidLogger.java
+ * Copy of <a href="https://github.com/firebase/firebase-android-sdk/blob/master/firebase-perf/src/main/java/com/google/firebase/perf/logging/AndroidLogger.java">...</a>
  */
-public class AndroidLogger {
+public class AndroidLog {
+
+    private static final String LOG_TAG = "Trackingplan";
 
     public enum LogLevel {
         VERBOSE,
@@ -51,28 +55,66 @@ public class AndroidLogger {
         ERROR
     }
 
-    private static LogLevel logLevel = LogLevel.INFO;
-    private static volatile AndroidLogger instance;
+    private static volatile LogLevel logLevel = LogLevel.INFO;
+    private static volatile AndroidLog instance;
 
-    private final String logTag;
+    private final List<Logger> loggers;
 
-    public static AndroidLogger getInstance() {
+    public static AndroidLog getInstance() {
         if (instance == null) {
-            synchronized (AndroidLogger.class) {
+            synchronized (AndroidLog.class) {
                 if (instance == null) {
-                    instance = new AndroidLogger("Trackingplan");
+                    instance = new AndroidLog();
                 }
             }
         }
         return instance;
     }
 
-    public AndroidLogger(@NonNull String tag) {
-        logTag = tag;
+    public static void setLogLevel(LogLevel logLevel) {
+        AndroidLog.logLevel = logLevel;
     }
 
-    public static void setLogLevel(LogLevel logLevel) {
-        AndroidLogger.logLevel = logLevel;
+    private AndroidLog() {
+        loggers = new ArrayList<>(List.of(new LogcatLogger(LOG_TAG)));
+    }
+
+    @VisibleForTesting
+    synchronized public void addLogger(Logger logger) {
+        loggers.add(logger);
+    }
+
+    @VisibleForTesting
+    synchronized public void removeLogger(Logger logger) {
+        loggers.remove(logger);
+    }
+
+    /**
+     * Logs a VERBOSE message to the console (logcat).
+     *
+     * @param msg The string to log.
+     */
+    public void verbose(String msg) {
+        if (LogLevel.VERBOSE.compareTo(logLevel) == 0) {
+            for (Logger logger : getLoggersCopy()) {
+                logger.v(msg);
+            }
+        }
+    }
+
+    /**
+     * Logs a VERBOSE message to the console (logcat).
+     *
+     * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
+     * @param args Arguments referenced by the format specifiers in the format string.
+     * @see String#format(Locale, String, Object...)
+     */
+    public void verbose(String format, Object... args) {
+        if (LogLevel.VERBOSE.compareTo(logLevel) == 0) {
+            for (Logger logger : getLoggersCopy()) {
+                logger.v(String.format(Locale.ENGLISH, format, args));
+            }
+        }
     }
 
     /**
@@ -82,7 +124,9 @@ public class AndroidLogger {
      */
     public void debug(String msg) {
         if (LogLevel.DEBUG.compareTo(logLevel) >= 0) {
-            Log.d(logTag, msg);
+            for (Logger logger : getLoggersCopy()) {
+                logger.d(msg);
+            }
         }
     }
 
@@ -95,31 +139,9 @@ public class AndroidLogger {
      */
     public void debug(String format, Object... args) {
         if (LogLevel.DEBUG.compareTo(logLevel) >= 0) {
-            debug(String.format(Locale.ENGLISH, format, args));
-        }
-    }
-
-    /**
-     * Logs a VERBOSE message to the console (logcat).
-     *
-     * @param msg The string to log.
-     */
-    public void verbose(String msg) {
-        if (LogLevel.VERBOSE.compareTo(logLevel) >= 0) {
-            Log.v(logTag, msg);
-        }
-    }
-
-    /**
-     * Logs a VERBOSE message to the console (logcat).
-     *
-     * @param format A <a href="../util/Formatter.html#syntax">format string</a>.
-     * @param args Arguments referenced by the format specifiers in the format string.
-     * @see String#format(Locale, String, Object...)
-     */
-    public void verbose(String format, Object... args) {
-        if (LogLevel.VERBOSE.compareTo(logLevel) >= 0) {
-            verbose(String.format(Locale.ENGLISH, format, args));
+            for (Logger logger : getLoggersCopy()) {
+                logger.d(String.format(Locale.ENGLISH, format, args));
+            }
         }
     }
 
@@ -130,7 +152,9 @@ public class AndroidLogger {
      */
     public void info(String msg) {
         if (LogLevel.INFO.compareTo(logLevel) >= 0) {
-            Log.i(logTag, msg);
+            for (Logger logger : getLoggersCopy()) {
+                logger.i(msg);
+            }
         }
     }
 
@@ -143,7 +167,9 @@ public class AndroidLogger {
      */
     public void info(String format, Object... args) {
         if (LogLevel.INFO.compareTo(logLevel) >= 0) {
-            info(String.format(Locale.ENGLISH, format, args));
+            for (Logger logger : getLoggersCopy()) {
+                logger.i(String.format(Locale.ENGLISH, format, args));
+            }
         }
     }
 
@@ -154,7 +180,9 @@ public class AndroidLogger {
      */
     public void warn(String msg) {
         if (LogLevel.WARN.compareTo(logLevel) >= 0) {
-            Log.w(logTag, msg);
+            for (Logger logger : getLoggersCopy()) {
+                logger.w(msg);
+            }
         }
     }
 
@@ -167,7 +195,9 @@ public class AndroidLogger {
      */
     public void warn(String format, Object... args) {
         if (LogLevel.WARN.compareTo(logLevel) >= 0) {
-            warn(String.format(Locale.ENGLISH, format, args));
+            for (Logger logger : getLoggersCopy()) {
+                logger.w(String.format(Locale.ENGLISH, format, args));
+            }
         }
     }
 
@@ -178,7 +208,9 @@ public class AndroidLogger {
      */
     public void error(String msg) {
         if (LogLevel.ERROR.compareTo(logLevel) >= 0) {
-            Log.e(logTag, msg);
+            for (Logger logger : getLoggersCopy()) {
+                logger.e(msg);
+            }
         }
     }
 
@@ -191,7 +223,14 @@ public class AndroidLogger {
      */
     public void error(String format, Object... args) {
         if (LogLevel.ERROR.compareTo(logLevel) >= 0) {
-            error(String.format(Locale.ENGLISH, format, args));
+            for (Logger logger : getLoggersCopy()) {
+                logger.e(String.format(Locale.ENGLISH, format, args));
+            }
         }
+    }
+
+    // Workaround to avoid ConcurrentModificationException
+    private List<Logger> getLoggersCopy() {
+        return new ArrayList<>(loggers);
     }
 }

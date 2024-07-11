@@ -3,6 +3,8 @@ package com.trackingplan.client.sdk.util;
 
 import android.os.Handler;
 
+import androidx.annotation.NonNull;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -16,7 +18,7 @@ public class TaskRunner {
     private final Executor executor = Executors.newSingleThreadExecutor();
     private final Handler handler;
 
-    public TaskRunner(Handler handler) {
+    public TaskRunner(@NonNull final Handler handler) {
         this.handler = handler;
     }
 
@@ -24,9 +26,13 @@ public class TaskRunner {
         executor.execute(() -> {
             try {
                 final T result = callable.call();
-                handler.post(() -> callback.onComplete(result, null));
+                if (callback != null) {
+                    handler.post(() -> callback.onComplete(result, null));
+                }
             } catch (Exception e) {
-                handler.post(() -> callback.onComplete(null, e));
+                if (callback != null) {
+                    handler.post(() -> callback.onComplete(null, e));
+                }
             }
         });
     }

@@ -8,7 +8,8 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.delivery.TrackBuilder;
 import com.trackingplan.client.sdk.exceptions.TrackingplanSendException;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.StreamUtils;
 
 import org.json.JSONArray;
@@ -16,6 +17,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,7 +29,7 @@ import java.util.List;
 
 final public class TrackingplanClient {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private static final int TRACKS_CONNECT_TIMEOUT = 30 * 1000;
 
@@ -40,34 +42,47 @@ final public class TrackingplanClient {
     }
 
     public float getSamplingRate() throws IOException, JSONException {
-
         URL url = new URL(config.getConfigEndPoint() + "config-" + config.getTpId() + ".json");
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
-        try (InputStream in = new BufferedInputStream(urlConnection.getInputStream())) {
-            String rawConfig = StreamUtils.convertInputStreamToString(in);
-            var jsonObject = new JSONObject(rawConfig);
-            float samplingRate = (float) jsonObject.getDouble("sample_rate");
-            var environmentRates = jsonObject.optJSONObject("environment_rates");
-            if (environmentRates != null) {
-                samplingRate = (float) environmentRates.optDouble(config.getEnvironment(), samplingRate);
-            }
-            return samplingRate;
+        String rawConfig;
+        try {
+            rawConfig = readResponse(urlConnection.getInputStream());
+        } catch (FileNotFoundException ex) {
+            rawConfig = readResponse(urlConnection.getErrorStream());
         } finally {
             urlConnection.disconnect();
         }
+
+        return parseSamplingRate(rawConfig);
     }
 
-    public int sendTracks(List<HttpRequest> requests, float samplingRate) throws IOException {
+    private String readResponse(InputStream inputStream) throws IOException {
+        try (InputStream in = new BufferedInputStream(inputStream)) {
+            return StreamUtils.convertInputStreamToString(in);
+        }
+    }
+
+    private float parseSamplingRate(String rawConfig) throws JSONException {
+        var jsonObject = new JSONObject(rawConfig);
+        float samplingRate = (float) jsonObject.getDouble("sample_rate");
+        var environmentRates = jsonObject.optJSONObject("environment_rates");
+        if (environmentRates != null) {
+            samplingRate = (float) environmentRates.optDouble(config.getEnvironment(), samplingRate);
+        }
+        return samplingRate;
+    }
+
+    public int sendTracks(List<HttpRequest> requests, @NonNull final TrackingplanSession session) throws IOException {
 
         JSONArray batchPayload;
 
         try {
-            batchPayload = builder.createJsonPayload(requests, samplingRate);
+            batchPayload = builder.createJsonPayload(requests, session);
 
             if (config.isDebugEnabled()) {
                 String payloadString = batchPayload.toString(2);
-                logPayload("Batch\n" + payloadString);
+                logger.verbose("Batch: " + payloadString);
             }
 
         } catch (JSONException ex) {
@@ -124,12 +139,5 @@ final public class TrackingplanClient {
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/json");
         return conn;
-    }
-
-    private void logPayload(String payloadString) {
-        String[] lines = payloadString.split("\\r?\\n");
-        for (String line : lines) {
-            logger.verbose(line);
-        }
     }
 }

@@ -6,7 +6,8 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.BatchSender;
 import com.trackingplan.client.sdk.TrackingplanClient;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.TaskRunner;
 
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
  */
 final public class TaskRunnerBatchSender implements BatchSender {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private final TrackingplanClient client;
     private final TaskRunner taskRunner;
@@ -27,8 +28,8 @@ final public class TaskRunnerBatchSender implements BatchSender {
     }
 
     @Override
-    public void send(@NonNull List<HttpRequest> batch, float samplingRate, long batchId, SendCallback callback) {
-        SendBatchTask task = new SendBatchTask(batch, client, samplingRate);
+    public void send(@NonNull final List<HttpRequest> batch, @NonNull final TrackingplanSession session, final long batchId, SendCallback callback) {
+        SendBatchTask task = new SendBatchTask(batch, client, session);
         taskRunner.executeTask(task, (batchResult, error) -> {
             if (error == null) {
                 logger.debug(batchResult.numRequestsSent + " raw tracks of batch " + batchId + " sent to Trackingplan (" + batchResult.numFailedRequests + " failed)");

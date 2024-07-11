@@ -37,7 +37,7 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,7 +55,7 @@ import java.util.Map;
  */
 final class InstrURLConnectionBase {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
     private static final String USER_AGENT_PROPERTY = "User-Agent";
 
     private final HttpURLConnection httpUrlConnection;

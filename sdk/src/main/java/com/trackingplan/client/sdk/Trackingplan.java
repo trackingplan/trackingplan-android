@@ -8,28 +8,30 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 import java.util.Map;
 
 final public class Trackingplan {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private Trackingplan() {
         // Empty
     }
 
-    @SuppressWarnings("unused")
-    @MainThread
     public static ConfigInitializer init(@NonNull String tpId) {
         return new ConfigInitializer(tpId);
     }
 
     @VisibleForTesting
-    @MainThread
     public static void clearInitState() {
         stop(false);
+        // Wait for all task to finish
+        final var instance = TrackingplanInstance.getInstance();
+        if (instance != null && instance.waitForRunSync()) {
+            logger.warn("Wait for Trackingplan stop timed out");
+        }
     }
 
     /**
@@ -50,7 +52,7 @@ final public class Trackingplan {
     }
 
     @MainThread
-    public static void start(@NonNull TrackingplanConfig config) {
+    public static void start(@NonNull final TrackingplanConfig config) {
 
         final var instance = TrackingplanInstance.getInstance();
 
@@ -69,7 +71,7 @@ final public class Trackingplan {
 
     @MainThread
     @VisibleForTesting
-    public static void startTest(@NonNull TrackingplanConfig config) {
+    public static void startTest(@NonNull final TrackingplanConfig config) {
 
         final var instance = TrackingplanInstance.getInstance();
 
@@ -81,9 +83,12 @@ final public class Trackingplan {
         startTrackingplan(instance, config);
     }
 
-    private static void startTrackingplan(@NonNull TrackingplanInstance instance, @NonNull TrackingplanConfig config) {
+    private static void startTrackingplan(
+            @NonNull final TrackingplanInstance instance,
+            @NonNull final TrackingplanConfig config
+    ) {
         try {
-            // Enable instrument in case SDK was stopped before
+            // Enable instrument
             InstrumentRequestBuilder.setDisabled(false);
             instance.start(config);
         } catch (Exception e) {
@@ -91,14 +96,13 @@ final public class Trackingplan {
         }
     }
 
-    @MainThread
     public static void stop() {
         stop(true);
     }
 
-    @MainThread
     private static void stop(boolean unregisterInstance) {
 
+        // Disable instrument
         InstrumentRequestBuilder.setDisabled(true);
 
         try {
@@ -106,7 +110,9 @@ final public class Trackingplan {
             if (instance != null) {
                 instance.stop();
                 if (unregisterInstance) {
-                    TrackingplanInstance.registerInstance(null);
+                    instance.runSync(() -> {
+                        TrackingplanInstance.registerInstance(null);
+                    });
                 }
             } else {
                 throw new Exception("Trackingplan was not registered during app startup");
@@ -114,6 +120,8 @@ final public class Trackingplan {
 
             if (unregisterInstance) {
                 logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " disabled. To enable it again remove the stop() call and restart the app.");
+            } else {
+                logger.info("Trackingplan v" + BuildConfig.SDK_VERSION + " stopped.");
             }
 
         } catch (Exception e) {
@@ -199,7 +207,7 @@ final public class Trackingplan {
         public void start(Context ignoredContext) {
             TrackingplanConfig config = configBuilder.build();
             if (config.isDebugEnabled()) {
-                AndroidLogger.setLogLevel(AndroidLogger.LogLevel.VERBOSE);
+                AndroidLog.setLogLevel(AndroidLog.LogLevel.VERBOSE);
             }
             Trackingplan.start(config);
         }

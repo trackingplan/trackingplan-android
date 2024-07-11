@@ -1,13 +1,10 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk.interception;
 
-import android.os.SystemClock;
-
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;

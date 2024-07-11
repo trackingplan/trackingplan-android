@@ -1,19 +1,17 @@
 package com.trackingplan.client.junit;
 
 import android.app.Application;
+import android.util.Log;
 
 import androidx.test.runner.AndroidJUnitRunner;
 
 import com.trackingplan.client.sdk.Trackingplan;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 
 public class TrackingplanJUnitRunner extends AndroidJUnitRunner {
-
-    private static final AndroidLogger logger = new AndroidLogger("TrackingplanJUnitRunner");
-
     @Override
     public void callApplicationOnCreate(Application app) {
-        logger.info("Launching application...");
+        Log.i("TrackingplanJUnitRunner", "Launching application...");
         Trackingplan.enableInstrumentedTestMode();
         super.callApplicationOnCreate(app);
     }

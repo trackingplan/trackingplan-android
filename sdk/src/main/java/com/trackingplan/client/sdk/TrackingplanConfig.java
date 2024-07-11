@@ -16,9 +16,7 @@ final public class TrackingplanConfig {
 
     public static final int MAX_REQUEST_BODY_SIZE_IN_BYTES = 100 * 1024;
 
-    public final static float SAMPLING_RATE_UNINITIALIZED = -1;
-
-    public final static TrackingplanConfig emptyConfig = new TrackingplanConfig();
+    public final static TrackingplanConfig EMPTY = new TrackingplanConfig();
 
     private String tpId;
     private String environment;
@@ -48,7 +46,7 @@ final public class TrackingplanConfig {
         this.debug = false;
         this.dryRun = false;
         this.backgroundObserver = true;
-        this.tracksEndPoint = "https://tracks.trackingplan.com/v1/";
+        this.tracksEndPoint = "https://eu-tracks.trackingplan.com/v1/";
         this.configEndPoint = "https://config.trackingplan.com/";
     }
 

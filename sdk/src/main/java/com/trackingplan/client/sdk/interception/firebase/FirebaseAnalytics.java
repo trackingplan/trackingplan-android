@@ -12,12 +12,12 @@ import androidx.annotation.Size;
 
 import com.trackingplan.client.sdk.TrackingplanInstance;
 import com.trackingplan.client.sdk.interception.InstrumentRequestBuilder;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.JSONUtils;
 
 final public class FirebaseAnalytics {
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private static boolean analyticsEnabled = true;
 

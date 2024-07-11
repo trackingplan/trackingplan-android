@@ -1,6 +1,8 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.sdk;
 
+import static com.trackingplan.client.sdk.TrackingplanInstance.RuntimeEnvironment.AndroidJUnit;
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -17,17 +19,23 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.trackingplan.client.sdk.interception.HttpRequest;
 import com.trackingplan.client.sdk.interception.InterceptionContext;
-import com.trackingplan.client.sdk.session.FetchSessionDataTask;
-import com.trackingplan.client.sdk.session.SessionData;
-import com.trackingplan.client.sdk.session.SessionDataStorage;
-import com.trackingplan.client.sdk.util.AndroidLogger;
+import com.trackingplan.client.sdk.session.SamplingRate;
+import com.trackingplan.client.sdk.session.Storage;
+import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.util.AndroidLog;
+import com.trackingplan.client.sdk.util.JSONUtils;
 import com.trackingplan.client.sdk.util.TaskRunner;
+import com.trackingplan.client.sdk.util.ThreadUtils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Trackingplan singleton instance.
@@ -64,7 +72,7 @@ final public class TrackingplanInstance {
 
     private static final long FETCH_CONFIG_RETRY_INTERVAL_MS = 5 * 60 * 1000;
 
-    private static final AndroidLogger logger = AndroidLogger.getInstance();
+    private static final AndroidLog logger = AndroidLog.getInstance();
 
     private static volatile TrackingplanInstance instance;
 
@@ -80,6 +88,7 @@ final public class TrackingplanInstance {
     private final HandlerThread handlerThread;
     private final TaskRunner taskRunner;
     private final Handler handler;
+    private final AtomicInteger numActiveTasks;
 
     private final Map<String, String> providers;
     private final RequestQueue requestQueue;
@@ -87,33 +96,38 @@ final public class TrackingplanInstance {
     // NOTE: Application context has the same lifecycle as the app. So no leak is possible
     private final Context context;
 
-    private TrackingplanConfig config;
+    private volatile TrackingplanConfig config;
     private TrackingplanClient client;
+    private Storage storage;
 
-    private SessionData currentSessionData;
-    private boolean downloadingSessionData = false;
-
-    // processRequest will work again when current time >= suspendedUntilMs
-    private long suspendedUntilMs = 0;
+    @NonNull
+    private TrackingplanSession currentSession;
 
     private final MyLifecycleObserver lifecycleObserver;
     private Lifecycle appLifeCycle;
 
     private RuntimeEnvironment runtimeEnvironment = RuntimeEnvironment.AndroidDefault;
 
+    // For testing purposes
+    private boolean fakeSamplingEnabled;
+
     @MainThread
     TrackingplanInstance(@NonNull final Context context) {
-        checkRunningInMainThread();
+        ThreadUtils.checkRunningInMainThread();
         this.context = context.getApplicationContext();
         lifecycleObserver = new MyLifecycleObserver();
         providers = makeDefaultProviders();
-        config = TrackingplanConfig.emptyConfig;
+        config = TrackingplanConfig.EMPTY;
         requestQueue = new RequestQueue(this);
+        currentSession = TrackingplanSession.EMPTY;
         // Start Trackingplan thread. Intercepted requests will be routed through it
         handlerThread = new HandlerThread("Trackingplan");
         handlerThread.start();
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
+        numActiveTasks = new AtomicInteger(0);
         taskRunner = new TaskRunner(this.handler);
+        // For testing purposes
+        fakeSamplingEnabled = false;
     }
 
     @Override
@@ -129,6 +143,14 @@ final public class TrackingplanInstance {
     @VisibleForTesting
     public void setRuntimeEnvironment(RuntimeEnvironment runtime) {
         this.runtimeEnvironment = runtime;
+        if (!fakeSamplingEnabled && runtime == AndroidJUnit) {
+            fakeSamplingEnabled = true;
+        }
+    }
+
+    @VisibleForTesting
+    public void setFakeSamplingEnabled(boolean enabled) {
+        fakeSamplingEnabled = enabled;
     }
 
     @MainThread
@@ -143,9 +165,9 @@ final public class TrackingplanInstance {
     }
 
     @MainThread
-    void start(@NonNull TrackingplanConfig config) throws IllegalArgumentException {
+    void start(@NonNull final TrackingplanConfig config) throws IllegalArgumentException {
 
-        if (config.equals(TrackingplanConfig.emptyConfig)) {
+        if (config.equals(TrackingplanConfig.EMPTY)) {
             throw new IllegalArgumentException("Empty config");
         }
 
@@ -155,11 +177,13 @@ final public class TrackingplanInstance {
 
         // Start in Trackingplan thread
         runSync(() -> {
-
-            if (instance.isConfigured()) {
-                logger.info("Trackingplan is already initialized. Start ignored");
+            if (isConfigured()) {
+                logger.warn("Trackingplan already initialized. Start ignored");
                 return;
             }
+
+            logger.info("Trackingplan initialized");
+            logger.debug("Configuration: " + config);
 
             if (config.isDebugEnabled()) {
                 logger.info("Debug mode enabled");
@@ -169,10 +193,8 @@ final public class TrackingplanInstance {
                 logger.info("DryRun mode enabled");
             }
 
-
-            logger.debug("Configuration: " + config);
-
             this.config = config;
+            this.storage = new Storage(config.getTpId(), config.getEnvironment(), context);
 
             providers.clear();
             providers.putAll(makeDefaultProviders());
@@ -182,30 +204,33 @@ final public class TrackingplanInstance {
 
             client = new TrackingplanClient(config, context);
 
-            // Get session data. Note that session data is bypassed for AndroidJUnit
-            SessionData sessionData;
-            if (runtimeEnvironment == RuntimeEnvironment.AndroidJUnit) {
-                sessionData = new SessionData(config.getTpId(), 1, true, System.currentTimeMillis());
-            } else {
-                sessionData = SessionDataStorage.load(config.getTpId(), context);
-            }
-
-            if (!SessionDataStorage.hasExpired(sessionData)) {
-                startSession(sessionData);
-            }
-            // else Session initialization will be triggered in processRequest
-
             logger.info("Trackingplan started");
+            startSession();
         });
     }
 
-    @MainThread
     void stop() {
-        attachToLifeCycle(null);
+        final var mainHandler = new Handler(Looper.getMainLooper());
+        mainHandler.post(() -> attachToLifeCycle(null));
+
         // Stop in Trackingplan thread
         runSync(() -> {
             requestQueue.stop();
-            this.config = TrackingplanConfig.emptyConfig;
+
+            // Wait for pending taskRunner tasks to finish
+            final CountDownLatch lock = new CountDownLatch(1);
+            taskRunner.executeTask(() -> { lock.countDown(); return true; }, null);
+            try {
+                lock.await();
+            } catch (InterruptedException e) {
+                logger.warn("Current thread interrupted while waiting for Trackingplan.stop");
+            }
+
+            stopSession();
+            this.currentSession = TrackingplanSession.EMPTY;
+            this.config = TrackingplanConfig.EMPTY;
+
+            logger.info("Trackingplan stopped");
         });
     }
 
@@ -221,17 +246,26 @@ final public class TrackingplanInstance {
         return taskRunner;
     }
 
+    @NonNull
+    @VisibleForTesting
+    public TrackingplanSession getSession() {
+        return currentSession;
+    }
+
     /**
      * Execute task inside Trackingplan main thread
      *
      * @param task Task
      */
     public void runSync(@NonNull Runnable task) {
+        numActiveTasks.incrementAndGet();
         this.handler.post(() -> {
             try {
                 task.run();
             } catch (Exception ex) {
                 logger.error("RunSync failed: " + ex.getMessage());
+            } finally {
+                numActiveTasks.decrementAndGet();
             }
         });
     }
@@ -255,6 +289,19 @@ final public class TrackingplanInstance {
         this.handler.removeCallbacks(callback);
     }
 
+    @VisibleForTesting
+    public boolean waitForRunSync() {
+        try {
+            while (numActiveTasks.get() > 0) {
+                Thread.sleep(500);
+            }
+            return false;
+        } catch (InterruptedException e) {
+            logger.debug("Current thread interrupted while waiting for runSync");
+            return true;
+        }
+    }
+
     /**
      * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder.
      * Note that a queue is used for intercepted requests so that they are grouped into batches
@@ -269,40 +316,19 @@ final public class TrackingplanInstance {
     ) {
         checkRunningInTrackingplanThread();
 
-        if (isSuspended()) {
-            logger.warn("Request ignored. Request processing is disabled temporarily");
-            return;
-        }
-
-        boolean isConfigured = isConfigured();
-        boolean sessionExpired = SessionDataStorage.hasExpired(currentSessionData);
-        boolean shouldQueue = !isConfigured || sessionExpired || currentSessionData.isTrackingEnabled();
-
-        if (isConfigured && sessionExpired && !downloadingSessionData) {
-
-            // Refresh session data downloading it from backend. Note
-            // that request processing continues so that it can get enqueued.
-            // This request will get processed once session is refreshed. If
-            // tracking is enabled, they will be sent to trackingplan. Otherwise,
-            // they will be discarded.
-
-            refreshSessionDataAsync(this.config);
-        }
-
-        if (!shouldQueue) {
-            logger.verbose("Request ignored. Tracking disabled");
+        // Session is empty before Trackingplan.init(...).start() is called. So queue these requests
+        // unless a valid session is started and tracking is disabled.
+        if (!currentSession.getSessionId().isEmpty() && !currentSession.isTrackingEnabled()) {
+            logger.verbose("Request ignored. Tracking disabled for current session");
             return;
         }
 
         try {
-            // Note that initRequestContext depends on TrackingplanConfig#ignoreContext setting.
-            // Since configuration is not available during interception, context initialization has
-            // been moved from the interception stage to the process stage.
             initRequestContext(request, interceptionContext);
 
             // Note that initRequestDestination depends on TrackingplanConfig#customDomains setting.
-            // For this reason, setting the provider of a request has been moved from the interception
-            // stage to the process stage (configuration is not available during interception).
+            // This means that intercepted requests targeted to any customDomain are ignored
+            // before Trackingplan.init(...).start() call.
             initRequestDestination(request);
 
             if (!isTargetedToSupportedDestination(request)) {
@@ -312,37 +338,83 @@ final public class TrackingplanInstance {
 
             requestQueue.queueRequest(request);
 
-            if (isConfigured && !sessionExpired && currentSessionData.isTrackingEnabled()) {
-                requestQueue.processQueue(currentSessionData.getSamplingRate());
+            // Do not process queue if there is no config or currentSession is not yet a valid
+            if (!isConfigured() || !currentSession.isTrackingEnabled()) {
+                return;
             }
+
+            // Keep reference to session in case currentSession changes while processing the queue
+            final var session = currentSession;
+
+            requestQueue.processQueue(session, false, () -> {
+                // Check that the session is still the same
+                if (!currentSession.getSessionId().equals(session.getSessionId())) return;
+                if (currentSession.updateLastActivity()) {
+                    storage.saveSession(currentSession);
+                    logger.verbose("Last session activity updated and saved");
+                }
+            });
+
         } catch (Exception ex) {
             logger.error("Request processing failed: " + ex.getMessage());
         }
     }
 
     /**
+     * Creates a trackingplan event and adds it to the queue. Note that the event might end up
+     * not being send if the session wasn't eligible for enabling tracking or the app gets terminated
+     * or killed before queue is processed and sent to Trackingplan.
+     *
+     * @param eventName Name of the event
+     */
+    private void queueTrackingplanEvent(@NonNull final String eventName) {
+
+        final var builder = new HttpRequest.Builder()
+                .setProvider("trackingplan")
+                .setHttpMethod("POST")
+                .setUrl("TRACKINGPLAN")
+                .addHeaderField("Content-Type", "application/json");
+
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("event_name", eventName);
+            final byte[] payload = JSONUtils.encodeJsonPayload(jsonObject);
+            builder.setRequestPayload(payload);
+            builder.setRequestPayloadNumBytes(payload.length);
+        } catch (JSONException e) {
+            // Silent exceptions. No error should compromise host app
+            logger.verbose("Failed to create Trackingplan " + eventName + " event");
+            return;
+        }
+
+        final var request = builder.build();
+        final var interceptionContext = InterceptionContext.createInterceptionContext(context);
+        processRequest(request, interceptionContext);
+    }
+
+    /**
      * Flush the requests queue. It times out after 10s.
      */
     @VisibleForTesting
-    void flushQueue() {
+    public void flushQueue() {
         flushQueue(10000);
     }
 
     private void flushQueue(long timeout) {
         final CountDownLatch lock = new CountDownLatch(1);
         runSync(() -> {
-            if (!isConfigured() || SessionDataStorage.hasExpired(currentSessionData) || !currentSessionData.isTrackingEnabled()) {
+            if (!isConfigured() || !currentSession.isTrackingEnabled()) {
                 logger.debug("Processing queue ignored because of missing configuration");
                 lock.countDown();
                 return;
             }
-            requestQueue.processQueue(currentSessionData.getSamplingRate(), true, lock::countDown);
+            requestQueue.processQueue(currentSession, true, lock::countDown);
         });
         try {
             if (Thread.currentThread() != handlerThread && timeout > 0) {
                 var counterReachedZero = lock.await(timeout, TimeUnit.MILLISECONDS);
                 if (!counterReachedZero) {
-                    logger.debug("Queue flushing took longer than 10 seconds (timeout)");
+                    logger.debug("Queue flushing took longer than " + timeout + " ms. (timeout)");
                 }
             }
         } catch (InterruptedException e) {
@@ -356,76 +428,194 @@ final public class TrackingplanInstance {
     }
 
     boolean isConfigured() {
-        return config != null && !TrackingplanConfig.emptyConfig.equals(config);
+        return config != null && !TrackingplanConfig.EMPTY.equals(config);
     }
 
     RuntimeEnvironment getRuntimeEnvironment() {
         return runtimeEnvironment;
     }
 
-    private void startSession(SessionData sessionData) {
+    private void startSession() {
 
-        this.currentSessionData = sessionData;
+        checkRunningInTrackingplanThread();
 
-        logger.debug("Session initialized with data: " + sessionData.toString());
+        // Force getting the sampling rate in order to trigger download every 24 hour as it might not
+        // be downloaded in case of long sessions (a session spanning over a period larger than 24 hours).
+        getSamplingRate();
 
-        if (!sessionData.isTrackingEnabled()) {
-            long remainingTime = SessionDataStorage.remainingTimeTillExpiration(sessionData);
-            suspendRequestProcessingTemporarily(remainingTime);
+        // Note that new session is started (and previous one is expired) after a period of inactivity
+        // Let's assume that queue was empty before the app received new activity so any pending
+        // requests in the queue should be attributed to the new session. In other words, there is
+        // no need to flush the queue before starting a new session.
+        final var session = restoreOrCreateSession();
+
+        if (session.getSessionId().equals(currentSession.getSessionId())) {
+            logger.verbose("Session already started. Start ignored");
             return;
         }
 
-        // Process any pending requests that happened before session was started
-        requestQueue.processQueue(currentSessionData.getSamplingRate());
-    }
-
-    /**
-     * Stop accepting new requests so that new requests are ignored. Any pending
-     * requests that weren't sent yet are discarded
-     *
-     * @param duration Duration
-     */
-    private void suspendRequestProcessingTemporarily(long duration) {
-        suspendedUntilMs = SystemClock.elapsedRealtime() + duration;
-        int numPendingRequests = requestQueue.discardPendingRequests();
-        logger.warn("Request processing is suspended temporarily for " + (duration / 1000) + " seconds");
-        logger.info("Tracking is disabled for this session.");
-        if (numPendingRequests > 0) {
-            logger.debug(numPendingRequests + " pending intercepted requests were discarded");
+        if (session.isNew()) {
+            logger.debug("New session started: " + session);
+        } else {
+            logger.debug("Session resumed: " + session);
         }
-    }
 
-    private boolean isSuspended() {
-        return SystemClock.elapsedRealtime() < suspendedUntilMs;
-    }
+        var queueHasPendingTrackingplanEvents = false;
 
-    private void refreshSessionDataAsync(TrackingplanConfig config) {
-        if (downloadingSessionData) return;
+        // Trigger new_dau event if last one was sent 24h ago
+        if (storage.wasLastDauSent24hAgo()) {
+            logger.verbose("New daily active user");
+            queueTrackingplanEvent("new_dau");
+            queueHasPendingTrackingplanEvents = true;
+        }
 
-        logger.verbose("Session data expired. Downloading ...");
-        downloadingSessionData = true;
+        // Trigger new_session event every time a new session is started
+        if (session.isNew()) {
+            logger.verbose("New session");
+            queueTrackingplanEvent("new_session");
+            queueHasPendingTrackingplanEvents = true;
+        }
 
-        taskRunner.executeTask(new FetchSessionDataTask(config.getTpId(), client), (newSessionData, error) -> {
-            if (error == null) {
-                SessionDataStorage.save(newSessionData, context);
-                logger.verbose("Session data downloaded and saved");
-                startSession(newSessionData);
-                downloadingSessionData = false;
-            } else {
-                suspendRequestProcessingTemporarily(FETCH_CONFIG_RETRY_INTERVAL_MS);
-                downloadingSessionData = false;
-                logger.error("Fetching session data failed: " + error.getMessage());
+        // Trigger new_user event the first time it is executed.
+        if (storage.isFirstTimeExecution()) {
+            logger.verbose("First time execution");
+            queueTrackingplanEvent("new_user");
+            queueHasPendingTrackingplanEvents = true;
+        }
+
+        // All events triggered during startSession should have been queued before this assignment
+        // to avoid useless calls to requestQueue.processQueue.
+        currentSession = session;
+
+        if (!currentSession.isTrackingEnabled()) {
+            int numPendingRequests = requestQueue.discardPendingRequests();
+            logger.debug("Tracking is disabled for this session");
+            if (numPendingRequests > 0) {
+                logger.debug(numPendingRequests + " pending intercepted requests were discarded");
+            }
+            return;
+        }
+
+        // Reference used by processQueue callback
+        final var storage = this.storage;
+
+        // Process pending requests that happened before session was started
+        requestQueue.processQueue(currentSession, queueHasPendingTrackingplanEvents, () -> {
+            if (storage.isFirstTimeExecution()) {
+                storage.saveFirstTimeExecution();
+            }
+            if (storage.wasLastDauSent24hAgo()) {
+                storage.saveLastDauEventSentTime();
             }
         });
     }
 
-    private void initRequestContext(HttpRequest request, InterceptionContext interceptionContext) {
-        if (config.ignoreContext()) {
+    private void stopSession() {
+
+        checkRunningInTrackingplanThread();
+
+        if (currentSession.getSessionId().isEmpty()) {
             return;
         }
 
+        if (currentSession.updateLastActivity()) {
+            storage.saveSession(currentSession);
+            logger.verbose("Last session activity updated and saved");
+        }
+    }
+
+    @NonNull
+    private TrackingplanSession restoreOrCreateSession() {
+
+        checkRunningInTrackingplanThread();
+
+        TrackingplanSession session = storage.loadSession();
+
+        // Restore session
+        if (!session.hasExpired()) {
+            logger.verbose("Previous session found and is still valid");
+            if (session.updateLastActivity()) {
+                storage.saveSession(session);
+                logger.verbose("Last session activity updated and saved");
+            }
+            return session;
+        }
+
+        logger.verbose("Previous session expired or doesn't exist. Creating a new session...");
+
+        final var samplingRate = getSamplingRate();
+
+        // New session
+        if (!samplingRate.hasExpired()) {
+            session = TrackingplanSession.newSession(samplingRate.getValue(), samplingRate.isTrackingEnabled());
+            logger.verbose("New session created with tracking " + (session.isTrackingEnabled() ? "enabled" : "disabled"));
+        } else {
+            // Create a new session with tracking disabled.
+            session = TrackingplanSession.newSession(session.getSamplingRate(), false);
+            logger.verbose("New session created with tracking disabled because sampling rate was outdated");
+        }
+
+        storage.saveSession(session);
+        logger.verbose("Session saved");
+
+        return session;
+    }
+
+    @NonNull
+    private SamplingRate getSamplingRate() {
+
+        checkRunningInTrackingplanThread();
+
+        var samplingRate = storage.loadSamplingRate();
+
+        if (!samplingRate.hasExpired()) {
+            logger.verbose("Previous sampling rate found and is still valid");
+            logger.verbose("Sampling: " + samplingRate);
+            return samplingRate;
+        }
+
+        logger.verbose("Sampling rate expired. Downloading...");
+
+        if (fakeSamplingEnabled) {
+            samplingRate = new SamplingRate(1.0f);
+            storage.saveSamplingRate(samplingRate);
+            logger.debug("Sampling rate downloaded and saved");
+            logger.verbose("Sampling: " + samplingRate);
+        } else {
+
+            var numAttempts = 2;
+            Exception lastError;
+
+            do {
+                try {
+                    samplingRate = new SamplingRate(client.getSamplingRate());
+                    lastError = null;
+                    storage.saveSamplingRate(samplingRate);
+                    logger.debug("Sampling rate downloaded and saved");
+                    logger.verbose("Sampling: " + samplingRate);
+                } catch (Exception ex) {
+                    numAttempts -= 1;
+                    lastError = ex;
+                    SystemClock.sleep(1000);
+                }
+            } while (lastError != null && numAttempts > 0);
+
+            if (lastError != null) {
+                // TODO: Cancel any previous retry
+                logger.error("Sampling rate download failed:\n\t" + lastError);
+                logger.verbose(samplingRate.toString());
+                runSyncDelayed(FETCH_CONFIG_RETRY_INTERVAL_MS, this::getSamplingRate);
+            }
+        }
+
+        return samplingRate;
+    }
+
+    private void initRequestContext(HttpRequest request, InterceptionContext interceptionContext) {
         if (!interceptionContext.activityName.isEmpty()) {
+            // TODO: Remove "activity" from context
             request.addContextField("activity", interceptionContext.activityName);
+            request.addContextField("screen", interceptionContext.activityName);
         }
     }
 
@@ -483,16 +673,38 @@ final public class TrackingplanInstance {
         throw new IllegalThreadStateException("Method must be called from Trackingplan main thread");
     }
 
-    private void checkRunningInMainThread() {
-        if (Thread.currentThread() == Looper.getMainLooper().getThread()) return;
-        throw new IllegalThreadStateException("Method must be called from UI main thread");
-    }
-
     private class MyLifecycleObserver implements DefaultLifecycleObserver {
         @Override
+        public void onResume(@NonNull LifecycleOwner owner) {
+            DefaultLifecycleObserver.super.onResume(owner);
+            runSync(() -> {
+                if (!isConfigured()) return;
+                logger.verbose("onResume lifecycle called");
+                startSession();
+            });
+        }
+
+        @Override
+        public void onPause(@NonNull LifecycleOwner owner) {
+            // This is not called when app is terminated. As a workaround, activity is updated
+            // after sending a batch of raw tracks in processRequest
+            DefaultLifecycleObserver.super.onPause(owner);
+            runSync(() -> {
+                if (!isConfigured()) return;
+                logger.verbose("onPause lifecycle called");
+                stopSession();
+            });
+        }
+
+        @Override
         public void onStop(@NonNull LifecycleOwner owner) {
+            // TODO: This is not called when app is terminated/killed because of using ProcessLifecycleOwner
             DefaultLifecycleObserver.super.onStop(owner);
-            logger.debug("Processing queue before going to background");
+            runSync(() -> {
+                if (!isConfigured()) return;
+                logger.verbose("onStop lifecycle called.");
+                logger.debug("Processing queue before going to background");
+            });
             // Do not wait as this is called from MainThread
             flushQueue(0);
         }

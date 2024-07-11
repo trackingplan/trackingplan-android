@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-- [Trackingplan](#trackingplan)  
+- [Trackingplan](#trackingplan)
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
@@ -13,7 +13,7 @@
 
 ## Trackingplan
 
-With Trackingplan for Android you can make sure that your tracking is going as you planned without changing your current analytics stack or code. 
+With Trackingplan for Android you can make sure that your tracking is going as you planned without changing your current analytics stack or code.
 
 Trackingplan will monitor traffic between your app and data destinations and automatically detect any changes in your analytics implementation and warn you about inconsistencies like hit drops, missing properties, rogue events, and more.
 
@@ -31,14 +31,14 @@ First, add the Trackingplan dependency using Android Studio, like so:
 
 In Android Studio, expand the `Gradle Scripts` section
 
-![image](https://user-images.githubusercontent.com/3706385/126515536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
+![image](https://user-images.githubusercontent.com/3706385/1.8.05536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.7.0` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.8.0` as a classpath dependency to the dependencies section:
 
 ```gradle
-dependencies {   
+dependencies {
     // ...
-    classpath "com.trackingplan.client:adapter:1.7.0"
+    classpath "com.trackingplan.client:adapter:1.8.0"
     // ...
 }
 ```
@@ -46,7 +46,7 @@ dependencies {
 After that, select the `module-level build.gradle` file and modify it as indicated below:
 
 - Add `id 'com.trackingplan.client'` to the plugins section.
-```gradle 
+```gradle
 plugins {
     // ...
     id 'com.trackingplan.client'
@@ -54,16 +54,16 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.7.0'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.8.0'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.7.0'
+    implementation 'com.trackingplan.client:sdk:1.8.0'
     // ...
 }
 ```
 
-Then in the `onCreate` method of your Application's Main Activity, set up the SDK like so:
+Then in the `onCreate` method of your custom Application class, set up the SDK like so:
 
 ```java
 Trackingplan.init("YOUR_TP_ID").start(this)
@@ -84,7 +84,7 @@ Trackingplan for Android supports the following `advanced options` during its in
 
 | Parameter | Description | Default |
 | ----------|-------------|---------------|
-| `enableDebug()`         | Enables debug mode. Prints debug information in the console. | `disabled` | 
+| `enableDebug()`         | Enables debug mode. Prints debug information in the console. | `disabled` |
 | `environment(value)` | Allows to isolate the data between production and testing environments. | `PRODUCTION` |
 | `dryRun()` | Enables dry run mode. Do not send intercepted requests to Trackingplan. | `disabled` |
 | `customDomains(map)` | Allows to extend the list of monitored domains. Any request made to these domains will also be forwarded to Trackingplan. The `map argument` must be a `key-value` with the domain to be looked for and the alias you want to use for that analytics domain. | `empty map`            |
@@ -111,16 +111,14 @@ Trackingplan.init("YOUR_TP_ID")
 
 ## Disable Trackingplan
 
-To disable `Trackingplan for Android SDK` the client that works at runtime must be disabled explictly.
+`Trackingplan for Android SDK` does not perform any monitoring unless `Trackingplan.init("YOUR_TP_ID").start(this)` is called. However, some of its runtime components are initialized automatically. To disable them, follow the next instructions.
 
-### Disable the client (runtime)
-Replace the call to `Trackingplan.init("YOUR_TP_ID").start(this)` by the next one:
+**Note for users coming from version <1.8.0**.
+>  In previous versions, when conditionally initializing Trackingplan, a call to `Trackingplan.stop(this)` was needed when Trackingplan wasn't going to be initialized. This isn't needed anymore starting at 1.8.0.
 
-```java
-Trackingplan.stop(this);
-```
+### Disable runtime components
 
-Alternatively, since `Trackingplan for Android SDK` uses [App Startup](https://developer.android.com/topic/libraries/app-startup) to perform its runtime initialization, the client can be disabled by adding the following to the `AndroidManifest.xml` of the app:
+`Trackingplan for Android SDK` uses [App Startup](https://developer.android.com/topic/libraries/app-startup) to perform its runtime initialization. In order to disable it, add the following snippet to the `AndroidManifest.xml` of your app:
 
 ```xml
 <provider
@@ -134,7 +132,7 @@ Alternatively, since `Trackingplan for Android SDK` uses [App Startup](https://d
 </provider>
 ```
 
-### (Optional) Disable the adapter plugin 
+### (Optional) Disable the adapter plugin
 Optionally, the adapter plugin that works at compile time can be disabled as well. This way no bytecode transformations are applied to your app.
 
 To disable the adapter plugin globally for your app, add the next line to your `gradle.properties` file:
@@ -159,12 +157,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.7.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:1.8.0` as a `androidTestImplementation` dependency to the dependencies section of your module-level `build.gradle` file:
 
 ```gradle
 dependencies {
     // ...
-    androidTestImplementation "com.trackingplan.client:junit-tools:1.7.0"
+    androidTestImplementation "com.trackingplan.client:junit-tools:1.8.0"
     // ...
 }
 ```
@@ -228,7 +226,7 @@ allprojects {
         // ...
         mavenLocal() // <-- Add maven local
     }
-}    
+}
 ```
 
 Remember to change the version of Trackingplan in your dependencies to  `1.2.0-SNAPSHOT`.
