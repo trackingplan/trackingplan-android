@@ -25,9 +25,9 @@ final public class TrackingplanConfig {
     private final Map<String, String> tags = new HashMap<>();
     private final Map<String, String> customContext = new HashMap<>();
 
-    private boolean ignoreContext;
     private boolean debug;
     private boolean dryRun;
+    private boolean testing;
     private boolean backgroundObserver;
 
     private String tracksEndPoint;
@@ -41,10 +41,10 @@ final public class TrackingplanConfig {
     private TrackingplanConfig() {
         this.tpId = "";
         this.environment = "PRODUCTION";
-        this.ignoreContext = false;
         this.sourceAlias = "android";
         this.debug = false;
         this.dryRun = false;
+        this.testing = false;
         this.backgroundObserver = true;
         this.tracksEndPoint = "https://eu-tracks.trackingplan.com/v1/";
         this.configEndPoint = "https://config.trackingplan.com/";
@@ -68,12 +68,12 @@ final public class TrackingplanConfig {
         return debug;
     }
 
-    public boolean isDryRunEnabled() {
-        return dryRun;
+    boolean isTestingEnabled() {
+        return testing;
     }
 
-    public boolean ignoreContext() {
-        return ignoreContext;
+    public boolean isDryRunEnabled() {
+        return dryRun;
     }
 
     public String getSourceAlias() {
@@ -117,7 +117,6 @@ final public class TrackingplanConfig {
                 "tpId='" + tpId + '\'' +
                 ", environment='" + environment + '\'' +
                 ", sourceAlias='" + sourceAlias + '\'' +
-                ", ignoreContext'=" + ignoreContext + '\'' +
                 ", dryRun='" + dryRun + '\'' +
                 ", debug='" + debug + '\'' +
                 '}';
@@ -135,7 +134,6 @@ final public class TrackingplanConfig {
                 && debug == that.debug
                 && dryRun == that.dryRun
                 && environment.equals(that.environment)
-                && ignoreContext == that.ignoreContext
                 && tags.equals(that.tags)
                 && tpId.equals(that.tpId)
                 && tracksEndPoint.equals(that.tracksEndPoint)
@@ -145,7 +143,7 @@ final public class TrackingplanConfig {
     @Override
     public int hashCode() {
         return Objects.hash(backgroundObserver, configEndPoint, customContext, customDomains,
-                debug, dryRun, environment, ignoreContext, tags, tpId, tracksEndPoint, sourceAlias);
+                debug, dryRun, environment, tags, tpId, tracksEndPoint, sourceAlias);
     }
 
     public static class Builder {
@@ -182,6 +180,11 @@ final public class TrackingplanConfig {
             return this;
         }
 
+        public Builder enableTesting() {
+            config.testing = true;
+            return this;
+        }
+
         public Builder enableDryRun() {
             config.dryRun = true;
             return this;
@@ -199,7 +202,7 @@ final public class TrackingplanConfig {
         }
 
         public Builder ignoreContext() {
-            config.ignoreContext = true;
+            // Ignored
             return this;
         }
 

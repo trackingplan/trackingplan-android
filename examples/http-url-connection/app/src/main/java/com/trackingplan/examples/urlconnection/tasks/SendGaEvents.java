@@ -1,7 +1,5 @@
 package com.trackingplan.examples.urlconnection.tasks;
 
-import androidx.annotation.NonNull;
-
 import com.trackingplan.examples.urlconnection.Utils;
 
 import java.io.IOException;
@@ -10,13 +8,12 @@ import java.net.URL;
 
 public class SendGaEvents implements Runnable {
 
-    final private String prefix;
-    final private int numEvents;
+    final private int numHits;
     private boolean stopped = false;
 
-    public SendGaEvents(@NonNull String prefix, int numEvents) {
-        this.prefix = prefix;
-        this.numEvents = numEvents;
+    public SendGaEvents(int numHits) {
+
+        this.numHits = numHits;
     }
 
     @Override
@@ -34,13 +31,17 @@ public class SendGaEvents implements Runnable {
 
     private void sendGaRandomGetRequests(long minTimeBetweenMs, long maxTimeBetweenMs) throws IOException, InterruptedException {
 
-        for (int i = 0; i < numEvents; i++) {
+        final String[] eventNames = {"PageView", "ViewProduct", "AddToCart", "Purchase", "SignIn", "SignOut"};
+
+        for (int i = 0; i < numHits; i++) {
 
             if (stopped) {
                 break;
             }
 
-            String eventName = prefix + "_Random_" + Utils.getRandomAlphaNumericString(10);
+            final var index = (int) Utils.getRandomNumber(0, eventNames.length - 1);
+            final var eventName = eventNames[index];
+
             String rawURL = "https://www.google-analytics.com/collect?v=1&_v=j81&a=1079976052" +
                     "&t=event&_s=4&dl=https%3A%2F%2Fdice.fm%2Fevent&dr=https%3A%2F%2Fwww.example.com%2F" +
                     "&ul=en&de=UTF-8&dt=Example&sd=24-bit&sr=2560x1080&vp=1691x709&je=0&ec=All" +

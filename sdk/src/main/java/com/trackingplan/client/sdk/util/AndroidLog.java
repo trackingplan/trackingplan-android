@@ -33,10 +33,10 @@
 
 package com.trackingplan.client.sdk.util;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -60,6 +60,7 @@ public class AndroidLog {
 
     private final List<Logger> loggers;
 
+    @NonNull
     public static AndroidLog getInstance() {
         if (instance == null) {
             synchronized (AndroidLog.class) {

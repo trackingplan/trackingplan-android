@@ -62,7 +62,7 @@ public class TestLogger implements Logger {
 
         messages.add(logMessage);
 
-        if (expectations.size() > 0 && expectations.get(0).match(logMessage.message)) {
+        if (!expectations.isEmpty() && expectations.get(0).match(logMessage.message)) {
             matches.add(logMessage);
             expectations.remove(0);
         }

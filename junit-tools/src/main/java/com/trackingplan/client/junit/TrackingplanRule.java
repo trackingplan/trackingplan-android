@@ -11,7 +11,6 @@ import org.junit.runners.model.Statement;
 
 import java.util.HashMap;
 
-@VisibleForTesting
 public class TrackingplanRule implements TestRule {
 
     private static final AndroidLog logger = AndroidLog.getInstance();

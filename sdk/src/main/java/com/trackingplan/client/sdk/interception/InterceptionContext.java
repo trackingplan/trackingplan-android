@@ -4,42 +4,100 @@ package com.trackingplan.client.sdk.interception;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 
+import com.trackingplan.client.sdk.util.ScreenViewTracker;
+import com.trackingplan.client.sdk.util.ServiceLocator;
+
+import java.util.List;
+import java.util.Locale;
+
 public class InterceptionContext {
+
+    private static volatile boolean initialized = false;
+
+    public static String appName = "";
+    public static String appVersion = "";
+    public static String device = "";
+    public static String platform = "";
+    public static String language = "";
+
     public String activityName = "";
+    public String screenName = "";
+
     public String instrument = "";
 
-
     @NonNull
-    public static InterceptionContext createInterceptionContext(Context context) {
+    public static InterceptionContext createInterceptionContext(@NonNull final Context context) {
+
+        if (!initialized) {
+            synchronized (InterceptionContext.class) {
+                if (!initialized) {
+                    initCommonContext(context);
+                    initialized = true;
+                }
+            }
+        }
 
         var interceptionContext = new InterceptionContext();
 
-        String activityName = getTopActivityName(context);
-        if (activityName != null && !activityName.isEmpty()) {
+        final String activityName = getTopActivityName(context);
+        if (!activityName.isEmpty()) {
             interceptionContext.activityName = activityName;
+        }
+
+        final var screenViewTracker = ServiceLocator.tryGetSharedInstance(ScreenViewTracker.class);
+        if (screenViewTracker != null) {
+            interceptionContext.screenName = screenViewTracker.getLastScreenName();
         }
 
         return interceptionContext;
     }
 
-    private static String getTopActivityName(@NonNull Context context) {
+    private static void initCommonContext(@NonNull final Context context) {
 
-        String name = null;
+        final PackageManager packageManager = context.getPackageManager();
+        final ApplicationInfo applicationInfo = context.getApplicationInfo();
+
+        device = Build.MANUFACTURER + " " + Build.MODEL;
+        platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
+
+        appName = (String) packageManager.getApplicationLabel(applicationInfo);
+        language = context.getResources().getConfiguration().getLocales().toLanguageTags();
 
         try {
-            // NOTE: Works without any extra permission in Android 5.0+
-            // NOTE: This API is deprecated in newer versions of Android
-            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            ComponentName cn = am.getRunningTasks(1).get(0).topActivity;
-            name = cn.getClassName();
+            PackageInfo pInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
+            appVersion = pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            appVersion = "unknown";
+        }
+    }
 
+    @NonNull
+    private static String getTopActivityName(@NonNull Context context) {
+
+        String currentActivityName = "";
+
+        try {
+            final ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            final List<ActivityManager.AppTask> taskInfo = am.getAppTasks();
+
+            if (!taskInfo.isEmpty()) {
+                final ActivityManager.RecentTaskInfo task = taskInfo.get(0).getTaskInfo();
+                final ComponentName componentName = task.topActivity;
+                if (componentName != null) {
+                    currentActivityName = componentName.getClassName();
+                }
+            }
         } catch (Exception ignored) {
             // Fail silently
         }
 
-        return name;
+        return currentActivityName;
     }
 }

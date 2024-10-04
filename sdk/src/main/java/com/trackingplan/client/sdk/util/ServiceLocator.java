@@ -44,4 +44,13 @@ public final class ServiceLocator {
         //noinspection unchecked
         return (T) instance;
     }
+
+    public static <T> T tryGetSharedInstance(@NonNull Class<T> clazz) {
+        final var instance = sharedInstances.getOrDefault(clazz, null);
+        if (instance == null) {
+           return null;
+        }
+        //noinspection unchecked
+        return (T) instance;
+    }
 }

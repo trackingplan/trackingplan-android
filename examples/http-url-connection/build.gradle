@@ -1,18 +1,18 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id 'com.android.application' version '7.3.1' apply false
-    id 'com.android.library' version '7.3.1' apply false
-    id 'com.trackingplan.client' version '1.6.0-SNAPSHOT' apply false
+    id 'com.android.application' version '8.5.0' apply false
+    id 'com.android.library' version '8.5.0' apply false
+    id 'com.trackingplan.client' version '1.8.0-SNAPSHOT' apply false
 }
 
 ext {
-    TrackingplanVersion = '1.6.0-SNAPSHOT'
+    TrackingplanVersion = '1.8.0-SNAPSHOT'
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }
 
-task cleanBuild(type: GradleBuild) {
+tasks.register('cleanBuild', GradleBuild) {
     tasks = ['clean', 'build']
 }

@@ -4,7 +4,6 @@ package com.trackingplan.client.sdk.delivery;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.util.Base64;
 
 import androidx.annotation.NonNull;
@@ -33,11 +32,9 @@ final public class TrackBuilder {
     private static final AndroidLog logger = AndroidLog.getInstance();
 
     private final TrackingplanConfig config;
-    private final String appVersion;
 
     public TrackBuilder(@NonNull TrackingplanConfig config, @NonNull final Context context) {
         this.config = config;
-        this.appVersion = getAppVersion(context);
     }
 
     public JSONArray createJsonPayload(List<HttpRequest> requests, @NonNull final TrackingplanSession session) throws JSONException {
@@ -62,9 +59,6 @@ final public class TrackBuilder {
 
     private JSONObject createRawTrack(HttpRequest request, @NonNull final TrackingplanSession session) throws JSONException {
 
-        String device = Build.MANUFACTURER + " " + Build.MODEL;
-        String platform = "Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")";
-
         var rawTrack = new JSONObject();
 
         rawTrack.put("tp_id", config.getTpId());
@@ -77,32 +71,27 @@ final public class TrackBuilder {
         requestJson.put("endpoint", request.getUrl());
         requestJson.put("method", request.getMethod());
         parsePayload(request, requestJson);
-        requestJson.put("response_code", request.getResponseCode());
+
+        if (request.getResponseCode() != -1) {
+            requestJson.put("response_code", request.getResponseCode());
+        }
 
         rawTrack.put("source_alias", config.getSourceAlias());
 
-        if (config.tags().size() > 0) {
+        if (!config.tags().isEmpty()) {
             rawTrack.put("tags", getTagsAsJson(config.tags()));
         }
 
         var context = new JSONObject();
         rawTrack.put("context", context);
 
-        // Always include app_version in the context even when context should be ignored as
-        // core features rely on this field.
-        context.put("app_version", appVersion);
-
         // Context established by unit tests
         for (var entry : config.customContext().entrySet()) {
             context.put(entry.getKey(), entry.getValue());
         }
 
-        if (!config.ignoreContext()) {
-            context.put("device", device);
-            context.put("platform", platform);
-            for (var entry : request.getContext().entrySet()) {
-                context.put(entry.getKey(), entry.getValue());
-            }
+        for (var entry : request.getContext().entrySet()) {
+            context.put(entry.getKey(), entry.getValue());
         }
 
         rawTrack.put("sampling_rate", session.getSamplingRate());
@@ -121,15 +110,6 @@ final public class TrackBuilder {
         }
 
         return tagsJson;
-    }
-    
-    private @NonNull String getAppVersion(Context context) {
-        try {
-            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            return pInfo.versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            return "Unknown";
-        }
     }
 
     private void parsePayload(HttpRequest request, JSONObject requestJson) throws JSONException {

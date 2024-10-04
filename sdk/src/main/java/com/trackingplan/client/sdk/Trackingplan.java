@@ -96,6 +96,7 @@ final public class Trackingplan {
         }
     }
 
+    @VisibleForTesting
     public static void stop() {
         stop(true);
     }

@@ -1,27 +1,26 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id 'com.android.library' version '7.2.1' apply false
-    // id 'org.jetbrains.kotlin.jvm' version '1.6.10' apply false
+    id 'com.android.library' version '8.5.0' apply false
 }
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "1.6.0-SNAPSHOT"
+    TrackingplanVersion = "1.8.0-SNAPSHOT"
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }
 
-task cleanBuildPublishLocal(type: GradleBuild) {
+tasks.register('cleanBuildPublishLocal', GradleBuild) {
     tasks = ['clean', 'buildPublishLocal']
 }
 
-task buildPublishLocal(type: GradleBuild) {
+tasks.register('buildPublishLocal', GradleBuild) {
     tasks = ['build', 'publishAdapterPublicationToMavenLocal', 'publishSdkPublicationToMavenLocal', 'publishJunitPublicationToMavenLocal', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToMavenLocal']
 }
 
-task cleanBuildPublishSonatype(type: GradleBuild) {
+tasks.register('cleanBuildPublishSonatype', GradleBuild) {
     tasks = ['clean', 'build', 'publishAdapterPublicationToSonatypeRepository', 'publishSdkPublicationToSonatypeRepository', 'publishJunitPublicationToSonatypeRepository', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToSonatypeRepository']
 }
 

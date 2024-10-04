@@ -59,8 +59,8 @@ public class SamplingRateInstrumentedTest extends BaseInstrumentedTest {
         logger.expectExactMessage("Sampling rate expired. Downloading...");
         logger.expectExactMessage("Sampling rate downloaded and saved");
         logger.expectMessageStartsWith("New session started");
-        logger.expectExactMessage("New daily active user");
         logger.expectExactMessage("New session");
+        logger.expectExactMessage("New daily active user");
         logger.expectExactMessage("First time execution");
         logger.expectExactMessage("Queue processed (3 requests). Batch 0 scheduled for sending");
         logger.expectExactMessage("Sampling rate expired. Downloading...");

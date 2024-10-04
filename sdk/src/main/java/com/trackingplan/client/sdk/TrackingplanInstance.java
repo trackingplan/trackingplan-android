@@ -4,6 +4,7 @@ package com.trackingplan.client.sdk;
 import static com.trackingplan.client.sdk.TrackingplanInstance.RuntimeEnvironment.AndroidJUnit;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -24,6 +25,7 @@ import com.trackingplan.client.sdk.session.Storage;
 import com.trackingplan.client.sdk.session.TrackingplanSession;
 import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.JSONUtils;
+import com.trackingplan.client.sdk.util.ScreenViewTracker;
 import com.trackingplan.client.sdk.util.TaskRunner;
 import com.trackingplan.client.sdk.util.ThreadUtils;
 
@@ -103,8 +105,12 @@ final public class TrackingplanInstance {
     @NonNull
     private TrackingplanSession currentSession;
 
-    private final MyLifecycleObserver lifecycleObserver;
+    private final FlushQueueOnStopLifecycleObserver flushQueueLifeCycleObserver;
+    private final SessionLifecycleObserver sessionLifecycleObserver;
     private Lifecycle appLifeCycle;
+
+    final private ScreenViewTracker.ScreenViewListener screenViewListener;
+    private ScreenViewTracker screenViewTracker;
 
     private RuntimeEnvironment runtimeEnvironment = RuntimeEnvironment.AndroidDefault;
 
@@ -115,17 +121,22 @@ final public class TrackingplanInstance {
     TrackingplanInstance(@NonNull final Context context) {
         ThreadUtils.checkRunningInMainThread();
         this.context = context.getApplicationContext();
-        lifecycleObserver = new MyLifecycleObserver();
         providers = makeDefaultProviders();
         config = TrackingplanConfig.EMPTY;
         requestQueue = new RequestQueue(this);
         currentSession = TrackingplanSession.EMPTY;
+
+        flushQueueLifeCycleObserver = new FlushQueueOnStopLifecycleObserver();
+        sessionLifecycleObserver = new SessionLifecycleObserver();
+        screenViewListener = new MyScreenViewListener();
+
         // Start Trackingplan thread. Intercepted requests will be routed through it
         handlerThread = new HandlerThread("Trackingplan");
         handlerThread.start();
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
         numActiveTasks = new AtomicInteger(0);
         taskRunner = new TaskRunner(this.handler);
+
         // For testing purposes
         fakeSamplingEnabled = false;
     }
@@ -135,7 +146,8 @@ final public class TrackingplanInstance {
         super.finalize();
         handlerThread.quitSafely();
         if (appLifeCycle != null) {
-            appLifeCycle.removeObserver(lifecycleObserver);
+            appLifeCycle.removeObserver(flushQueueLifeCycleObserver);
+            appLifeCycle.removeObserver(sessionLifecycleObserver);
         }
         logger.verbose("TrackingplanInstance destroyed");
     }
@@ -156,12 +168,25 @@ final public class TrackingplanInstance {
     @MainThread
     public void attachToLifeCycle(final Lifecycle lifecycle) {
         if (appLifeCycle != null) {
-            appLifeCycle.removeObserver(lifecycleObserver);
+            appLifeCycle.removeObserver(flushQueueLifeCycleObserver);
+            appLifeCycle.removeObserver(sessionLifecycleObserver);
         }
         if (lifecycle != null) {
-            lifecycle.addObserver(lifecycleObserver);
+            lifecycle.addObserver(flushQueueLifeCycleObserver);
+            lifecycle.addObserver(sessionLifecycleObserver);
         }
         this.appLifeCycle = lifecycle;
+    }
+
+    @MainThread
+    public void attachToScreenViewTracker(final ScreenViewTracker screenViewTracker) {
+        if (this.screenViewTracker != null) {
+            this.screenViewTracker.unregisterScreenViewListener(screenViewListener);
+        }
+        if (screenViewTracker != null) {
+            screenViewTracker.registerScreenViewListener(screenViewListener);
+        }
+        this.screenViewTracker = screenViewTracker;
     }
 
     @MainThread
@@ -172,6 +197,8 @@ final public class TrackingplanInstance {
         }
 
         if (!config.isBackgroundObserverEnabled()) {
+            // This disables flushing queue data when app goes to background and session
+            // activity tracking due to app moving from background to foreground and vice versa
             attachToLifeCycle(null);
         }
 
@@ -193,6 +220,10 @@ final public class TrackingplanInstance {
                 logger.info("DryRun mode enabled");
             }
 
+            if (screenViewTracker != null) {
+                logger.info("Screen attribution enabled");
+            }
+
             this.config = config;
             this.storage = new Storage(config.getTpId(), config.getEnvironment(), context);
 
@@ -211,7 +242,11 @@ final public class TrackingplanInstance {
 
     void stop() {
         final var mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(() -> attachToLifeCycle(null));
+
+        mainHandler.post(() -> {
+            attachToLifeCycle(null);
+            attachToScreenViewTracker(null);
+        });
 
         // Stop in Trackingplan thread
         runSync(() -> {
@@ -362,12 +397,13 @@ final public class TrackingplanInstance {
 
     /**
      * Creates a trackingplan event and adds it to the queue. Note that the event might end up
-     * not being send if the session wasn't eligible for enabling tracking or the app gets terminated
-     * or killed before queue is processed and sent to Trackingplan.
+     * not being send if the session wasn't eligible for tracking or the app gets terminated
+     * or killed before the queue is processed and sent to Trackingplan.
      *
      * @param eventName Name of the event
+     * @param properties Properties of the event
      */
-    private void queueTrackingplanEvent(@NonNull final String eventName) {
+    private void queueTrackingplanEvent(@NonNull final String eventName, final Bundle properties) {
 
         final var builder = new HttpRequest.Builder()
                 .setProvider("trackingplan")
@@ -378,6 +414,11 @@ final public class TrackingplanInstance {
         try {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("event_name", eventName);
+
+            if (properties != null && !properties.isEmpty()) {
+                jsonObject.put("properties", JSONUtils.makeJSONObject(properties));
+            }
+
             final byte[] payload = JSONUtils.encodeJsonPayload(jsonObject);
             builder.setRequestPayload(payload);
             builder.setRequestPayloadNumBytes(payload.length);
@@ -460,27 +501,26 @@ final public class TrackingplanInstance {
             logger.debug("Session resumed: " + session);
         }
 
-        var queueHasPendingTrackingplanEvents = false;
-
-        // Trigger new_dau event if last one was sent 24h ago
-        if (storage.wasLastDauSent24hAgo()) {
-            logger.verbose("New daily active user");
-            queueTrackingplanEvent("new_dau");
-            queueHasPendingTrackingplanEvents = true;
-        }
+        var forceSendBatch = false;
 
         // Trigger new_session event every time a new session is started
         if (session.isNew()) {
             logger.verbose("New session");
-            queueTrackingplanEvent("new_session");
-            queueHasPendingTrackingplanEvents = true;
+            queueTrackingplanEvent("new_session", null);
+        }
+
+        // Trigger new_dau event if last one was sent 24h ago
+        if (storage.wasLastDauSent24hAgo()) {
+            logger.verbose("New daily active user");
+            queueTrackingplanEvent("new_dau", null);
+            forceSendBatch = true;
         }
 
         // Trigger new_user event the first time it is executed.
         if (storage.isFirstTimeExecution()) {
             logger.verbose("First time execution");
-            queueTrackingplanEvent("new_user");
-            queueHasPendingTrackingplanEvents = true;
+            queueTrackingplanEvent("new_user", null);
+            forceSendBatch = true;
         }
 
         // All events triggered during startSession should have been queued before this assignment
@@ -500,7 +540,7 @@ final public class TrackingplanInstance {
         final var storage = this.storage;
 
         // Process pending requests that happened before session was started
-        requestQueue.processQueue(currentSession, queueHasPendingTrackingplanEvents, () -> {
+        requestQueue.processQueue(currentSession, forceSendBatch, () -> {
             if (storage.isFirstTimeExecution()) {
                 storage.saveFirstTimeExecution();
             }
@@ -612,10 +652,18 @@ final public class TrackingplanInstance {
     }
 
     private void initRequestContext(HttpRequest request, InterceptionContext interceptionContext) {
+        request.addContextField("app_name", InterceptionContext.appName);
+        request.addContextField("app_version", InterceptionContext.appVersion);
+        request.addContextField("language", InterceptionContext.language);
+        request.addContextField("device", InterceptionContext.device);
+        request.addContextField("platform", InterceptionContext.platform);
+
         if (!interceptionContext.activityName.isEmpty()) {
-            // TODO: Remove "activity" from context
             request.addContextField("activity", interceptionContext.activityName);
-            request.addContextField("screen", interceptionContext.activityName);
+        }
+
+        if (!interceptionContext.screenName.isEmpty()) {
+            request.addContextField("screen", interceptionContext.screenName);
         }
     }
 
@@ -642,15 +690,11 @@ final public class TrackingplanInstance {
         return new HashMap<>() {{
             put("api.amplitude.com", "amplitude");
             put("api2.amplitude.com", "amplitude");
-            // Disabled as payloads intercepted by urlconnection are encrypted
-            // put("inapps.appsflyer.com/api/v", "appsflyer");
-            // put("launches.appsflyer.com/api/v", "appsflyer");
             put("bat.bing.com", "bing");
             put("ping.chartbeat.net", "chartbeat");
             put("track-sdk-eu.customer.io/api", "customerio"); // Europe Region
             put("track-sdk.customer.io/api", "customerio"); // USA Region
             put("facebook.com/tr/", "facebook");
-            // put("firebaseinstallations.googleapis.com", "firebase");
             put("google-analytics.com", "googleanalytics");
             put("analytics.google.com", "googleanalytics");
             put("api.intercom.io", "intercom");
@@ -673,7 +717,22 @@ final public class TrackingplanInstance {
         throw new IllegalThreadStateException("Method must be called from Trackingplan main thread");
     }
 
-    private class MyLifecycleObserver implements DefaultLifecycleObserver {
+    private class FlushQueueOnStopLifecycleObserver implements DefaultLifecycleObserver {
+        @Override
+        public void onStop(@NonNull LifecycleOwner owner) {
+            // TODO: This is not called when app is terminated/killed because of using ProcessLifecycleOwner
+            DefaultLifecycleObserver.super.onStop(owner);
+            runSync(() -> {
+                if (!isConfigured()) return;
+                logger.verbose("onStop lifecycle called.");
+                logger.debug("Processing queue before going to background");
+                // Do not wait as this is called from TP thread
+                flushQueue(0);
+            });
+        }
+    }
+
+    private class SessionLifecycleObserver implements DefaultLifecycleObserver {
         @Override
         public void onResume(@NonNull LifecycleOwner owner) {
             DefaultLifecycleObserver.super.onResume(owner);
@@ -695,18 +754,22 @@ final public class TrackingplanInstance {
                 stopSession();
             });
         }
+    }
 
+    private class MyScreenViewListener implements ScreenViewTracker.ScreenViewListener {
         @Override
-        public void onStop(@NonNull LifecycleOwner owner) {
-            // TODO: This is not called when app is terminated/killed because of using ProcessLifecycleOwner
-            DefaultLifecycleObserver.super.onStop(owner);
+        public void onScreenViewed(@NonNull final String screenName,
+                                   @NonNull final String previousScreenName) {
+            logger.debug("Screen View " + screenName);
             runSync(() -> {
                 if (!isConfigured()) return;
-                logger.verbose("onStop lifecycle called.");
-                logger.debug("Processing queue before going to background");
+                final var params = new Bundle();
+                params.putString("screen", screenName);
+                if (!previousScreenName.isEmpty()) {
+                    params.putString("previous_screen", previousScreenName);
+                }
+                queueTrackingplanEvent("screen_view", params);
             });
-            // Do not wait as this is called from MainThread
-            flushQueue(0);
         }
     }
 }

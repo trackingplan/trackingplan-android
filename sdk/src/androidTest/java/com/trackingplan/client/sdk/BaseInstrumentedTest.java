@@ -40,7 +40,7 @@ abstract class BaseInstrumentedTest {
         fakeTime = new TestTime();
         ServiceLocator.registerSharedInstance(Time.class, fakeTime, true);
 
-        context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        context = InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
 
         final var storage = new Storage("TP000000", "PRODUCTION", context);
         storage.clear();

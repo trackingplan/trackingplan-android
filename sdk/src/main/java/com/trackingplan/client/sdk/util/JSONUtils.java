@@ -84,7 +84,7 @@ public class JSONUtils {
             } else if (value.getClass().isArray()) {
                 jsonObject.put(key, makeJSONArray((Object[]) value));
             } else if (value instanceof Iterable) {
-                jsonObject.put(key, makeJSONArray((Iterable) value));
+                jsonObject.put(key, makeJSONArray((Iterable<?>) value));
             } else {
                 jsonObject.put(key, value);
             }

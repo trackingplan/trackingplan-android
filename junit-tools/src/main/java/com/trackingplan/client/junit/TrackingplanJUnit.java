@@ -12,7 +12,6 @@ import com.trackingplan.client.sdk.util.AndroidLog;
 
 import java.util.Map;
 
-@VisibleForTesting
 public class TrackingplanJUnit {
 
     private static final AndroidLog logger = AndroidLog.getInstance();
@@ -74,12 +73,8 @@ public class TrackingplanJUnit {
             configBuilder = TrackingplanConfig.newConfig(tpId)
                     .environment(environment)
                     .enableDebug()
+                    .enableTesting()
                     .disableBackgroundObserver();
-        }
-
-        public TrackingplanInitializer configEndPoint(@NonNull String endPoint) {
-            configBuilder.configEndPoint(endPoint);
-            return this;
         }
 
         public TrackingplanInitializer customContext(@NonNull Map<String, String> customContext) {

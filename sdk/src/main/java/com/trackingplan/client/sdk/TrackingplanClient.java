@@ -107,7 +107,13 @@ final public class TrackingplanClient {
     private void sendTracks(byte[] payload) throws IOException {
 
         // TODO: Compress rawTracks before sending
-        HttpURLConnection conn = makeNewTracksConnection(config.getTracksEndPoint() + config.getTpId());
+
+        var endpoint = config.getTracksEndPoint() + config.getTpId();
+        if (config.isTestingEnabled()) {
+            endpoint = endpoint + "?t=" + System.currentTimeMillis();
+        }
+
+        HttpURLConnection conn = makeNewTracksConnection(endpoint);
 
         logger.verbose("Connecting to endpoint: " + conn.getURL().toString());
 

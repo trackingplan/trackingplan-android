@@ -64,11 +64,13 @@ public class SessionInstrumentedTest extends BaseInstrumentedTest {
         fakeTime.forwardTime(30 * Time.MINUTE);
 
         // When
-        logger.expectExactMessage("Previous session expired or doesn't exist. Creating a new session...");
+        logger.expectExactMessage("Previous sampling rate found and is still valid");
         logger.expectMessageStartsWith("New session started");
         logger.expectExactMessage("Queue processed (1 requests). Batch 0 scheduled for sending");
+        logger.expectExactMessage("Trackingplan stopped");
         startTrackingplan();
         var currentSession = TrackingplanInstance.getInstance().getSession();
+        stopTrackingplan();
 
         // Then
         Assert.assertNotEquals(previousSession, currentSession);

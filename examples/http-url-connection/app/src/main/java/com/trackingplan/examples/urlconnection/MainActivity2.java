@@ -14,7 +14,7 @@ import com.trackingplan.examples.urlconnection.tasks.SendGaEvents;
 
 public class MainActivity2 extends AppCompatActivity {
 
-    final private SendGaEvents backgroundTask = new SendGaEvents(this.getClass().getName(), 10);
+    final private SendGaEvents backgroundTask = new SendGaEvents(10);
     private ActivityMain2Binding binding;
 
     @Override
