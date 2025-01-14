@@ -16,6 +16,7 @@ public class DataLayerInstrumentRequestBuilder extends InstrumentRequestBuilder 
     @Override
     protected void beforeBuild() {
         // TODO: Get containerId from the container
+        // https://developers.google.com/tag-platform/tag-manager/android/v4
         builder.setProvider("lib-google-tagmanager-v4");
         builder.addHeaderField("Content-Type", "application/json");
     }

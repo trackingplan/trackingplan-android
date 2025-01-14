@@ -686,6 +686,10 @@ final public class TrackingplanInstance {
         }
     }
 
+    /**
+     * List of supported providers. This list is used by okhttp and urlconnection interceptors.
+     * @return
+     */
     private Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
             put("api.amplitude.com", "amplitude");
@@ -695,8 +699,6 @@ final public class TrackingplanInstance {
             put("track-sdk-eu.customer.io/api", "customerio"); // Europe Region
             put("track-sdk.customer.io/api", "customerio"); // USA Region
             put("facebook.com/tr/", "facebook");
-            put("google-analytics.com", "googleanalytics");
-            put("analytics.google.com", "googleanalytics");
             put("api.intercom.io", "intercom");
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");
