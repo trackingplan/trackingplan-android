@@ -63,7 +63,7 @@ dependencies {
 }
 ```
 
-### 4. Initialize Trackingplan when your app stats up
+### 4. Initialize Trackingplan when your app starts
 
 The `ExampleApplication` class initializes Trackingplan when the app starts:
 
