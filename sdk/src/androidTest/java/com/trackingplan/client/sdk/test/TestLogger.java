@@ -91,12 +91,29 @@ public class TestLogger implements Logger {
         expectations.add(new Expectation(Expectation.MatchOperator.StartsWith, prefix));
     }
 
+    public void expectMessageStartingWithAndContaining(@NonNull String prefix, @NonNull String... contains) {
+        expectations.add(new Expectation(Expectation.MatchOperator.StartsWithAndContains, prefix, contains));
+    }
+
     public void assertExpectationsMatch() {
 
-        if (expectations.isEmpty() && !matches.isEmpty()) {
-            matches.clear();
-            Assert.assertTrue(true);
-            return;
+        var numAttempts = 3;
+
+        while (numAttempts > 0) {
+
+            if (expectations.isEmpty() && !matches.isEmpty()) {
+                matches.clear();
+                Assert.assertTrue(true);
+                return;
+            }
+
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            numAttempts -= 1;
         }
 
         StringBuilder builder = new StringBuilder();
@@ -124,15 +141,24 @@ public class TestLogger implements Logger {
 
         enum MatchOperator {
             Exact,
-            StartsWith
+            StartsWith,
+            StartsWithAndContains
         }
 
         public final MatchOperator operator;
         public final String message;
+        public final String[] contains;
 
         public Expectation(MatchOperator operator, @NonNull String message) {
             this.operator = operator;
             this.message = message;
+            this.contains = null;
+        }
+
+        public Expectation(MatchOperator operator, @NonNull String message, @NonNull String[] contains) {
+            this.operator = operator;
+            this.message = message;
+            this.contains = contains;
         }
 
         public boolean match(@NonNull String message) {
@@ -141,6 +167,18 @@ public class TestLogger implements Logger {
                     return message.equals(this.message);
                 case StartsWith:
                     return message.startsWith(this.message);
+                case StartsWithAndContains:
+                    if (!message.startsWith(this.message)) {
+                        return false;
+                    }
+                    if (contains != null) {
+                        for (String containsString : contains) {
+                            if (!message.contains(containsString)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
                 default:
                     return false;
             }

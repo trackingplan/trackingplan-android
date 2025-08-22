@@ -1,7 +1,5 @@
 package com.trackingplan.client.sdk;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 
 

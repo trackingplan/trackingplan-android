@@ -38,19 +38,13 @@ final class RequestQueue {
      * This method must be called from Trackingplan thread
      */
     public void queueRequest(@NonNull HttpRequest request) {
+        tpInstance.checkRunningInTrackingplanThread();
         if (shuttingDown) {
             logger.verbose("Couldn't queue request because queue is stopped");
             return;
         }
         queue.add(request);
         logger.debug("Request queued: " + request);
-    }
-
-    /**
-     * @see RequestQueue#processQueue(TrackingplanSession, boolean, Runnable)
-     */
-    public void processQueue(@NonNull final TrackingplanSession session) {
-        processQueue(session, false, null);
     }
 
     /**
@@ -69,6 +63,8 @@ final class RequestQueue {
             boolean forceSendBatch,
             final Runnable callback
     ) {
+        tpInstance.checkRunningInTrackingplanThread();
+
         if (shuttingDown) {
             logger.debug("Process queue ignored. Queue is stopped");
             if (callback != null) callback.run();

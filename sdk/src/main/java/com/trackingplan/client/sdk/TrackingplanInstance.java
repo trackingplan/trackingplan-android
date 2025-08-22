@@ -381,6 +381,7 @@ final public class TrackingplanInstance {
             // Keep reference to session in case currentSession changes while processing the queue
             final var session = currentSession;
 
+            // Process queue if there is at least one batch to send
             requestQueue.processQueue(session, false, () -> {
                 // Check that the session is still the same
                 if (!currentSession.getSessionId().equals(session.getSessionId())) return;
@@ -474,6 +475,35 @@ final public class TrackingplanInstance {
 
     RuntimeEnvironment getRuntimeEnvironment() {
         return runtimeEnvironment;
+    }
+
+    /**
+     * Updates the tags in the current configuration by merging new tags with existing ones.
+     * This method can be called from any thread - it will automatically execute the update
+     * in the Trackingplan thread for thread safety.
+     * 
+     * @param newTags The tags to add or update. Must not be null.
+     */
+    public void updateTags(@NonNull Map<String, String> newTags) {
+        runSync(() -> {
+            if (!isConfigured()) {
+                logger.warn("Cannot update tags. Trackingplan is not initialized");
+                return;
+            }
+
+            // Process pending requests that happened before updating the tags
+            // Do not wait as this is called from TP thread
+            flushQueue(0);
+
+            TrackingplanConfig newConfig = this.config.withTags(newTags, false);
+            this.config = newConfig;
+
+            if (client != null) {
+                client = new TrackingplanClient(newConfig, context);
+            }
+            
+            logger.debug("Tags updated: " + newTags);
+        });
     }
 
     private void startSession() {
@@ -688,7 +718,6 @@ final public class TrackingplanInstance {
 
     /**
      * List of supported providers. This list is used by okhttp and urlconnection interceptors.
-     * @return
      */
     private Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
@@ -714,7 +743,7 @@ final public class TrackingplanInstance {
         }};
     }
 
-    private void checkRunningInTrackingplanThread() {
+    void checkRunningInTrackingplanThread() {
         if (Thread.currentThread() == handlerThread) return;
         throw new IllegalThreadStateException("Method must be called from Trackingplan main thread");
     }

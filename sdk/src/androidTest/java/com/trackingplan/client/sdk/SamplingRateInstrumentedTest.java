@@ -91,8 +91,8 @@ public class SamplingRateInstrumentedTest extends BaseInstrumentedTest {
         // When
         logger.expectExactMessage("Sampling rate expired. Downloading...");
         logger.expectExactMessage("Sampling rate downloaded and saved");
-        logger.expectMessageStartsWith("Sampling: SamplingRate{samplingRate=10.0");
-        startTrackingplan("TP1455915", "PRODUCTION");
+        logger.expectMessageStartsWith("Sampling: SamplingRate{samplingRate=180.0");
+        startTrackingplan("TP944306", "PRODUCTION");
 
         // Then
         logger.assertExpectationsMatch();
@@ -126,7 +126,7 @@ public class SamplingRateInstrumentedTest extends BaseInstrumentedTest {
         logger.expectExactMessage("Sampling rate expired. Downloading...");
         logger.expectExactMessage("Sampling rate downloaded and saved");
         logger.expectMessageStartsWith("Sampling: SamplingRate{samplingRate=1.0");
-        startTrackingplan("TP1455915", "staging");
+        startTrackingplan("TP944306", "staging");
 
         // Then
         logger.assertExpectationsMatch();

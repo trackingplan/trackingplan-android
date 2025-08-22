@@ -111,9 +111,7 @@ final public class Trackingplan {
             if (instance != null) {
                 instance.stop();
                 if (unregisterInstance) {
-                    instance.runSync(() -> {
-                        TrackingplanInstance.registerInstance(null);
-                    });
+                    instance.runSync(() -> TrackingplanInstance.registerInstance(null));
                 }
             } else {
                 throw new Exception("Trackingplan was not registered during app startup");
@@ -139,6 +137,23 @@ final public class Trackingplan {
         var instance = TrackingplanInstance.getInstance();
         if (instance != null) {
             instance.flushQueue();
+        }
+    }
+
+    /**
+     * Updates the tags in the current configuration by merging new tags with existing ones.
+     * This method can be called from any thread and will be executed safely in the Trackingplan thread.
+     * 
+     * @param newTags The tags to add or update. Must not be null. New tags will be merged with 
+     *                existing tags, with new values overwriting existing ones for the same keys.
+     */
+    @SuppressWarnings("unused")
+    public static void updateTags(@NonNull Map<String, String> newTags) {
+        var instance = TrackingplanInstance.getInstance();
+        if (instance != null) {
+            instance.updateTags(newTags);
+        } else {
+            logger.error("Cannot update tags. Trackingplan was not initialized");
         }
     }
 

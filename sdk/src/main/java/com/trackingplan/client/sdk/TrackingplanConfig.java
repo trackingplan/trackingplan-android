@@ -110,6 +110,45 @@ final public class TrackingplanConfig {
         return configEndPoint;
     }
 
+    /**
+     * Creates a new TrackingplanConfig instance with updated tags.
+     * 
+     * @param newTags The tags to add or set. Must not be null.
+     * @param replace If true, replaces all existing tags with the new tags.
+     *                If false, merges new tags with existing tags (new values overwrite existing ones for same keys).
+     * @return A new TrackingplanConfig instance with updated tags
+     */
+    @NonNull
+    public TrackingplanConfig withTags(@NonNull Map<String, String> newTags, boolean replace) {
+        TrackingplanConfig newConfig = new TrackingplanConfig(this.tpId);
+        
+        // Copy all existing configuration
+        newConfig.environment = this.environment;
+        newConfig.sourceAlias = this.sourceAlias;
+        newConfig.debug = this.debug;
+        newConfig.dryRun = this.dryRun;
+        newConfig.testing = this.testing;
+        newConfig.backgroundObserver = this.backgroundObserver;
+        newConfig.tracksEndPoint = this.tracksEndPoint;
+        newConfig.configEndPoint = this.configEndPoint;
+        
+        // Copy existing maps
+        newConfig.customDomains.putAll(this.customDomains);
+        newConfig.customContext.putAll(this.customContext);
+        
+        // Handle tags based on replace parameter
+        if (replace) {
+            // Replace: only use new tags
+            newConfig.tags.putAll(newTags);
+        } else {
+            // Merge: existing tags + new tags (new tags overwrite existing ones)
+            newConfig.tags.putAll(this.tags);
+            newConfig.tags.putAll(newTags);
+        }
+        
+        return newConfig;
+    }
+
     @Override
     @NonNull
     public String toString() {
@@ -201,6 +240,7 @@ final public class TrackingplanConfig {
             return this;
         }
 
+        @Deprecated
         public Builder ignoreContext() {
             // Ignored
             return this;
