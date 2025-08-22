@@ -43,6 +43,7 @@ android {
 
 dependencies {
     compileOnly 'androidx.test:runner:1.6.1'
+    androidTestImplementation 'androidx.test:runner:1.6.1'
     implementation 'junit:junit:4.13.2'
     implementation 'androidx.test.ext:junit:1.2.1'
     implementation project(path: ':sdk')
