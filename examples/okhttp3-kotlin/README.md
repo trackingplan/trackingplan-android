@@ -10,10 +10,10 @@ The `MainActivity` demonstrates a basic HTTP GET request using OkHttp:
 - Makes a GET request to GitHub's raw content to fetch OkHttp's README
 - Prints the response to the console
 - The request is automatically intercepted by Trackingplan but ignored since github.com is not a supported analytics destination, as shown in the logs:
-  ```
-  V  Request intercepted: HttpRequest{method='GET', failed='No', responseCode='200', provider='', intercepted by='okhttp', payloadSize='0', url='https://raw.githubusercontent.com/square/okhttp/master/README.md', created_at='1738934548981', context='{}', headers='{}'}
-  V  Request ignored. Doesn't belong to a supported destination
-  ```
+    ```
+    V  Request intercepted: HttpRequest{method='GET', failed='No', responseCode='200', provider='', intercepted by='okhttp', payloadSize='0', url='https://raw.githubusercontent.com/square/okhttp/master/README.md', created_at='1738934548981', context='{}', headers='{}'}
+    V  Request ignored. Doesn't belong to a supported destination
+    ```
 
 ## How this project was set up?
 
@@ -82,5 +82,6 @@ class ExampleApplication : Application() {
 This sets up Trackingplan with debug mode and dry run enabled for testing.
 
 ## Additional Resources
-- [Trackingplan Documentation](https://docs.trackingplan.com)
+
+- [Trackingplan Documentation](https://www.trackingplan.com/docs)
 - [OkHttp Official Documentation](https://square.github.io/okhttp/)
