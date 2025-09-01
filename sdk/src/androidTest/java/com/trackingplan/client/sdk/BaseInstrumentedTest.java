@@ -84,7 +84,7 @@ abstract class BaseInstrumentedTest {
             if (instance.waitForRunSync()) {
                 Assert.fail("Wait for Trackingplan start timed out");
             }
-            Assert.assertNotEquals(instance.getSession(), TrackingplanSession.EMPTY);
+            Assert.assertNotEquals(TrackingplanSession.EMPTY, instance.getSession());
         } else {
             Assert.fail("Trackingplan service not registered");
         }
@@ -114,7 +114,7 @@ abstract class BaseInstrumentedTest {
             initializer.create(context);
             TrackingplanInstance.getInstance().setFakeSamplingEnabled(true);
             Assert.assertFalse(TrackingplanInstance.getInstance().getSession().isTrackingEnabled());
-            Assert.assertEquals(TrackingplanInstance.getInstance().getSession(), TrackingplanSession.EMPTY);
+            Assert.assertEquals(TrackingplanSession.EMPTY, TrackingplanInstance.getInstance().getSession());
         });
     }
 }

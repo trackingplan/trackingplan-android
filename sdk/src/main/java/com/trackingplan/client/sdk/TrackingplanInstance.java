@@ -443,24 +443,32 @@ final public class TrackingplanInstance {
     }
 
     private void flushQueue(long timeout) {
+
         final CountDownLatch lock = new CountDownLatch(1);
-        runSync(() -> {
+
+        final Runnable handler = () -> {
             if (!isConfigured() || !currentSession.isTrackingEnabled()) {
                 logger.debug("Processing queue ignored because of missing configuration");
                 lock.countDown();
                 return;
             }
             requestQueue.processQueue(currentSession, true, lock::countDown);
-        });
-        try {
-            if (Thread.currentThread() != handlerThread && timeout > 0) {
-                var counterReachedZero = lock.await(timeout, TimeUnit.MILLISECONDS);
-                if (!counterReachedZero) {
-                    logger.debug("Queue flushing took longer than " + timeout + " ms. (timeout)");
+        };
+
+        if (Thread.currentThread() != handlerThread) {
+            runSync(handler);
+            try {
+                if (timeout > 0) {
+                    var counterReachedZero = lock.await(timeout, TimeUnit.MILLISECONDS);
+                    if (!counterReachedZero) {
+                        logger.debug("Queue flushing took longer than " + timeout + " ms. (timeout)");
+                    }
                 }
+            } catch (InterruptedException e) {
+                logger.debug("Current thread interrupted while waiting for queue flushing");
             }
-        } catch (InterruptedException e) {
-            logger.debug("Current thread interrupted while waiting for queue flushing");
+        } else {
+            handler.run();
         }
     }
 

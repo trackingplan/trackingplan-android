@@ -109,6 +109,37 @@ Trackingplan.init("YOUR_TP_ID")
     .start(this)
 ```
 
+## Updating Tags After Initialization
+
+You can update tags dynamically after the SDK has been initialized. This is useful for adding or updating contextual information as your app state changes.
+
+### Example
+
+```java
+// Update tags at any point after initialization
+Map<String, String> newTags = new HashMap<>();
+newTags.put("experiment_variant", "B");
+newTags.put("country", "uk"); // This will override any previous "country" value
+
+Trackingplan.updateTags(newTags);
+```
+
+Or in Kotlin:
+
+```kotlin
+// Update tags at any point after initialization
+Trackingplan.updateTags(mapOf(
+    "experiment_variant" to "B",
+    "country" to "uk" // This will override any previous "country" value
+))
+```
+
+The `updateTags` method:
+- Merges new tags with existing ones
+- Overwrites values for existing keys
+- Can be called from any thread (thread-safe)
+- Takes effect immediately for all subsequent tracked events
+
 ## Disable Trackingplan
 
 `Trackingplan for Android SDK` does not perform any monitoring unless `Trackingplan.init("YOUR_TP_ID").start(this)` is called. However, some of its runtime components are initialized automatically. To disable them, follow the next instructions.
