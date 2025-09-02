@@ -33,12 +33,12 @@ In Android Studio, expand the `Gradle Scripts` section
 
 ![image](https://user-images.githubusercontent.com/3706385/1.8.05536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.11.0` as a classpath dependency to the dependencies section:
+Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.11.1` as a classpath dependency to the dependencies section:
 
 ```gradle
 dependencies {
     // ...
-    classpath "com.trackingplan.client:adapter:1.11.0"
+    classpath "com.trackingplan.client:adapter:1.11.1"
     // ...
 }
 ```
@@ -54,11 +54,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.11.0'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:1.11.1'` to the dependencies section.
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.11.0'
+    implementation 'com.trackingplan.client:sdk:1.11.1'
     // ...
 }
 ```
@@ -118,6 +118,7 @@ You can update tags dynamically after the SDK has been initialized. This is usef
 ```java
 // Update tags at any point after initialization
 Map<String, String> newTags = new HashMap<>();
+newTags.put("user_type", "premium");
 newTags.put("experiment_variant", "B");
 newTags.put("country", "uk"); // This will override any previous "country" value
 
@@ -129,6 +130,7 @@ Or in Kotlin:
 ```kotlin
 // Update tags at any point after initialization
 Trackingplan.updateTags(mapOf(
+    "user_type" to "premium",
     "experiment_variant" to "B",
     "country" to "uk" // This will override any previous "country" value
 ))
@@ -188,12 +190,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.11.0` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:1.11.1` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
 
     ```gradle
     dependencies {
         // ...
-        androidTestImplementation "com.trackingplan.client:junit-tools:1.11.0"
+        androidTestImplementation "com.trackingplan.client:junit-tools:1.11.1"
         // ...
     }
     ```
