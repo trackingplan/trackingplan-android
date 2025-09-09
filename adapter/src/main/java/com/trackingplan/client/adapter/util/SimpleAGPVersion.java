@@ -1,17 +1,23 @@
 // Copyright (c) 2022 Trackingplan
 package com.trackingplan.client.adapter.util;
 
-import com.android.Version;
 import com.android.annotations.NonNull;
-import com.android.ide.common.repository.GradleVersion;
+import com.android.build.api.AndroidPluginVersion;
+import com.android.build.api.variant.AndroidComponentsExtension;
 import com.trackingplan.client.adapter.core.exceptions.CannotObtainAGPVersionException;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.gradle.api.Project;
 
 public class SimpleAGPVersion implements Comparable<SimpleAGPVersion> {
 
-    final private GradleVersion version;
+    private final AndroidPluginVersion version;
 
     public SimpleAGPVersion(int major, int minor, int micro) {
-        version = new GradleVersion(major, minor, micro);
+        version = new AndroidPluginVersion(major, minor, micro);
     }
 
     @Override
@@ -19,12 +25,30 @@ public class SimpleAGPVersion implements Comparable<SimpleAGPVersion> {
         return version.compareTo(simpleAGPVersion.version);
     }
 
-    public static SimpleAGPVersion getAndroidGradlePluginVersion() {
-        final var agpVersion = GradleVersion.tryParseAndroidGradlePluginVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION);
-        if (agpVersion == null) {
+    public static SimpleAGPVersion getAndroidGradlePluginVersion(
+            Project project
+    ) {
+        AndroidComponentsExtension androidComponents = project
+                .getExtensions()
+                .findByType(AndroidComponentsExtension.class);
+
+        if (androidComponents == null) {
             throw new CannotObtainAGPVersionException();
         }
-        return new SimpleAGPVersion(agpVersion.getMajor(), agpVersion.getMinor(), agpVersion.getMicro());
+
+        AndroidPluginVersion pluginVersion = androidComponents.getPluginVersion();
+        return new SimpleAGPVersion(
+                pluginVersion.getMajor(),
+                pluginVersion.getMinor(),
+                pluginVersion.getMicro()
+        );
+    }
+
+    private static List<Integer> splitVersionParts(String version) {
+        String[] splits = version.split("\\.");
+        return Arrays.stream(splits)
+                .map(Integer::valueOf)
+                .collect(Collectors.toList());
     }
 
     @Override

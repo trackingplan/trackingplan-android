@@ -3,7 +3,6 @@ package com.trackingplan.client.adapter;
 
 import com.android.build.gradle.AppExtension;
 import com.trackingplan.client.adapter.core.AdapterFlagState;
-import com.trackingplan.client.adapter.transform_api.TrackingplanTransform;
 import com.trackingplan.client.adapter.util.GradleLogger;
 import com.trackingplan.client.adapter.util.SimpleAGPVersion;
 import com.trackingplan.client.adapter.visitor_api.TrackingplanClassVisitorFactory;
@@ -16,7 +15,6 @@ public class TrackingplanPlugin implements Plugin<Project> {
     public static final String TP_ADAPTER_TAG = "TrackingplanAdapterPlugin";
     public static final String TP_EXTENSION_NAME = "trackingplan";
     public static final String TP_ADAPTER_ENABLED_KEY = "trackingplan.enableSdk";
-    public static final String TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY = "trackingplan.useAsmClassVisitor";
 
     private static final GradleLogger logger = GradleLogger.getInstance();
 
@@ -45,37 +43,29 @@ public class TrackingplanPlugin implements Plugin<Project> {
 
         var adapterFlagState = new AdapterFlagState(project);
         var tpGloballyEnabled = adapterFlagState.getProjectPropertyValue(TP_ADAPTER_ENABLED_KEY);
-        var useAsmClassVisitor = adapterFlagState.getProjectPropertyValue(TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY);
 
-        if (tpGloballyEnabled.isPresent() && Boolean.FALSE.equals(tpGloballyEnabled.get())) {
+        if (tpGloballyEnabled.isPresent() && !tpGloballyEnabled.get()) {
             logger.info(String.format("%s is disabled globally for the project by specifying '%s=false' flag in the 'gradle.properties' file.", TP_ADAPTER_TAG, TP_ADAPTER_ENABLED_KEY));
             return;
         }
 
-        final var gradlePluginVersion = SimpleAGPVersion.getAndroidGradlePluginVersion();
+        final var gradlePluginVersion = SimpleAGPVersion.getAndroidGradlePluginVersion(project);
         logger.info(String.format("Detected AGP Version: %s", gradlePluginVersion));
 
-
-        if (gradlePluginVersion.compareTo(new SimpleAGPVersion(8, 0, 0)) >= 0
-                || (gradlePluginVersion.compareTo(new SimpleAGPVersion(7, 2, 0)) >= 0
-                && useAsmClassVisitor.isPresent() && Boolean.TRUE.equals((useAsmClassVisitor.get())))
-        ) {
-            // Note that the use of the AsmClassVisitor (Variant / Instrumentation API) is opted-in
-            // due to the lack of support to transform bytecode from third-party dependencies when using
-            // this API. Starting with AGP 8.0 this will be the default method as the Transform API will
-            // be removed.
-
-            logger.info("Using new Instrumentation API");
-            TrackingplanClassVisitorFactory.registerForProject(project, adapterFlagState);
-
-        } else {
-
-            // The deprecated Transform API is the preferred method to do bytecode transformation as
-            // (AFAIK) this is the only method so far capable of transforming dependencies.
-
-            logger.info("Using Transform API (deprecated)");
-            androidExt.registerTransform(new TrackingplanTransform(adapterFlagState, project.provider(androidExt::getBootClasspath)));
+        // Enforce minimum AGP version requirement
+        final var minimumRequiredVersion = new SimpleAGPVersion(8, 0, 2);
+        if (gradlePluginVersion.compareTo(minimumRequiredVersion) < 0) {
+            throw new IllegalStateException(String.format(
+                "%s requires Android Gradle Plugin version 8.0.2 or higher. " +
+                "Current version: %s. Please upgrade your Android Gradle Plugin to version 8.0.2 or higher.",
+                TP_ADAPTER_TAG, gradlePluginVersion
+            ));
         }
+
+        // Since minimum AGP is now 8.0.2+, we always use the Instrumentation/Variant API
+        // The old Transform API has been removed starting with AGP 8.0
+        logger.info("Using Instrumentation/Variant API");
+        TrackingplanClassVisitorFactory.registerForProject(project, adapterFlagState);
     }
 
     private void registerExtension(AppExtension androidExt) {

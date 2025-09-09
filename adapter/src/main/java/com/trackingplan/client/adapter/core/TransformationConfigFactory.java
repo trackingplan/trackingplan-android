@@ -18,7 +18,6 @@ import com.trackingplan.client.adapter.core.asm.config.UrlConnectionGetContentIC
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionOpenConnectionIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionOpenConnectionProxyIC;
 import com.trackingplan.client.adapter.core.asm.config.UrlConnectionOpenStreamIC;
-import com.trackingplan.client.adapter.transform_api.ClassLoaderTransformationConfig;
 import com.trackingplan.client.adapter.visitor_api.ClassDataTransformationConfig;
 
 import java.util.List;
@@ -41,10 +40,6 @@ public class TransformationConfigFactory {
             new FirebaseAnalyticsSetUserIdIC(),
             new FirebaseAnalyticsSetUserPropertyIC()
     );
-
-    public ClassLoaderTransformationConfig newTransformationConfig(ClassLoader classLoader) {
-        return new ClassLoaderTransformationConfig(classLoader, this.configs);
-    }
 
     public ClassDataTransformationConfig newTransformationConfig(ClassContext classContext) {
         return new ClassDataTransformationConfig(classContext, this.configs);

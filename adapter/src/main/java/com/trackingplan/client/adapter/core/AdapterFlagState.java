@@ -31,8 +31,7 @@ final public class AdapterFlagState implements Serializable {
     public AdapterFlagState(Project project) {
         androidExt = project.getExtensions().getByType(AppExtension.class);
         parsedProjectProperties = ImmutableMap.of(
-                TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY),
-                TrackingplanPlugin.TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_USE_ASM_CLASS_VISITOR_KEY)
+                TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY)
         );
         androidExt.getApplicationVariants().all(variant -> updateInstrumentationEnabledFor(androidExt, variant));
     }

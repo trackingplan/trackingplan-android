@@ -30,13 +30,12 @@ java {
 
 dependencies {
     compileOnly gradleApi()
-    compileOnly 'com.android.tools.build:gradle:7.4.2'
+    compileOnly 'com.android.tools.build:gradle:8.0.2'
     // These are transitive dependencies from Android Gradle Plugin. The same versions are used like
-    // in gradle:7.4.2. Note that using a different number version might create classpath-related
+    // in gradle:8.0.2. Note that using a different number version might create classpath-related
     // build problems in projects using Trackingplan
-    compileOnly 'com.android.tools:sdk-common:30.4.2'
-    compileOnly 'com.android.tools:common:30.4.2'
-    compileOnly 'com.google.guava:guava:32.0.1-jre'
+    compileOnly 'com.android.tools:sdk-common:31.0.2'
+    compileOnly 'com.android.tools:common:31.0.2'
     compileOnly 'commons-io:commons-io:2.4'
     implementation 'org.ow2.asm:asm:9.2'
     implementation 'org.ow2.asm:asm-commons:9.2'
