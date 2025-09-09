@@ -45,6 +45,9 @@ captures/
 .idea/assetWizardSettings.xml
 .idea/dictionaries
 .idea/libraries
+.idea/misc.xml
+.idea/navEditor.xml
+.idea/deploymentTargetSelector.xml
 # Android Studio 3 in .gitignore file.
 .idea/caches
 .idea/modules.xml
@@ -85,6 +88,8 @@ lint/outputs/
 lint/tmp/
 # lint/reports/
 
+# Examples
+examples/**/.idea/
 
 # General
 .DS_Store
