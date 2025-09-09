@@ -4,6 +4,9 @@
 
 - [Trackingplan](#trackingplan)
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
+  - [Kotlin DSL (build.gradle.kts)](#kotlin-dsl-buildgradlekts)
+  - [Groovy DSL (build.gradle)](#groovy-dsl-buildgradle)
+  - [Trackingplan Initialization](#trackingplan-initialization)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
 - [Trackingplan for Regression Testing](#trackingplan-for-regression-testing)
@@ -25,27 +28,61 @@ Please request your ```TrackingplanId``` at <a href='https://www.trackingplan.co
 
 ## Add Trackingplan to your Android app
 
-The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 24 (Lollipop) or later.
+The recommended way to install Trackingplan for Android is by using Android Studio. Please, make sure your project targets API level 24 (Lollipop) or later and uses Android Gradle Plugin (AGP) 8.0.2 or later.
 
 First, add the Trackingplan dependency using Android Studio, like so:
 
 In Android Studio, expand the `Gradle Scripts` section
 
-![image](https://user-images.githubusercontent.com/3706385/1.8.05536-1d2e2775-d3ae-4d80-be15-3127328db89e.png)
+<img width="503" height="295" src="https://github.com/user-attachments/assets/ba3c0234-b72a-42f4-830d-b9e5c72bf8e1" />
 
-Select the `project-level build.gradle` file and add `com.trackingplan.client:adapter:1.11.1` as a classpath dependency to the dependencies section:
+### Kotlin DSL (build.gradle.kts)
 
-```gradle
+Select the `project-level build.gradle.kts` file and add the Trackingplan plugin to the plugins section:
+
+```kotlin
+plugins {
+    // ...
+    id("com.trackingplan.client") version "2.0.0" apply false
+    // ...
+}
+```
+
+After that, select the `module-level build.gradle.kts` file and modify it as indicated below:
+
+- Add the Trackingplan plugin to the plugins section:
+```kotlin
+plugins {
+    // ...
+    id("com.trackingplan.client")
+    // ...
+}
+```
+
+- Add `implementation("com.trackingplan.client:sdk:2.0.0")` to the dependencies section:
+```kotlin
 dependencies {
     // ...
-    classpath "com.trackingplan.client:adapter:1.11.1"
+    implementation("com.trackingplan.client:sdk:2.0.0")
+    // ...
+}
+```
+
+### Groovy DSL (build.gradle)
+
+Select the `project-level build.gradle` file and add the Trackingplan plugin to the plugins section:
+
+```gradle
+plugins {
+    // ...
+    id 'com.trackingplan.client' version '2.0.0' apply false
     // ...
 }
 ```
 
 After that, select the `module-level build.gradle` file and modify it as indicated below:
 
-- Add `id 'com.trackingplan.client'` to the plugins section.
+- Add the Trackingplan plugin to the plugins section:
 ```gradle
 plugins {
     // ...
@@ -54,14 +91,16 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:1.11.1'` to the dependencies section.
+- Add `implementation 'com.trackingplan.client:sdk:2.0.0'` to the dependencies section:
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:1.11.1'
+    implementation 'com.trackingplan.client:sdk:2.0.0'
     // ...
 }
 ```
+
+### Trackingplan Initialization
 
 Then in the `onCreate` method of your custom Application class, set up the SDK like so:
 
@@ -165,16 +204,18 @@ The `updateTags` method:
 </provider>
 ```
 
-### (Optional) Disable the adapter plugin
-Optionally, the adapter plugin that works at compile time can be disabled as well. This way no bytecode transformations are applied to your app.
+### (Optional) Disable the Trackingplan gradle plugin
+Optionally, the Trackingplan gradle plugin that works at compile time can be disabled as well. This way no bytecode transformations are applied to your app.
 
-To disable the adapter plugin globally for your app, add the next line to your `gradle.properties` file:
+**Note:** If the Trackingplan gradle plugin is disabled, traffic monitoring will stop working entirely.
+
+To disable the Trackingplan gradle plugin globally for your app, add the next line to your `gradle.properties` file:
 
 ```groovy
 trackingplan.enableSdk=false
 ```
 
-Alternatively, the adapter plugin can be disabled per build type. For instance, to have it disabled for your debug build, add the next lines to your `build.gradle` file inside your `android` section:
+Alternatively, the Trackingplan gradle plugin can be disabled per build type. For instance, to have it disabled for your debug build, add the next lines to your `build.gradle` file inside your `android` section:
 
 ```groovy
 buildTypes {
@@ -190,12 +231,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:1.11.1` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:2.0.0` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
 
     ```gradle
     dependencies {
         // ...
-        androidTestImplementation "com.trackingplan.client:junit-tools:1.11.1"
+        androidTestImplementation "com.trackingplan.client:junit-tools:2.0.0"
         // ...
     }
     ```
