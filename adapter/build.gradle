@@ -70,6 +70,19 @@ publishing {
                     }
                 }
             }
+            pluginMaven {
+                pom {
+                    name = "Trackingplan Android Adapter"
+                    description = "Gradle plugin for Trackingplan Android SDK"
+                    packaging = "jar"
+                }
+            }
+            TrackingplanAdapterPluginPluginMarkerMaven {
+                pom {
+                    name = "Trackingplan Android Plugin"
+                    description = "Gradle plugin for Trackingplan Android SDK"
+                }
+            }
         }
     }
     repositories {

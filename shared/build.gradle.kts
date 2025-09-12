@@ -123,6 +123,47 @@ tasks.register("deployXCFrameworkToiOS") {
 }
 
 publishing {
+    publications {
+        // Common POM configuration for all publications
+        withType<MavenPublication> {
+            pom {
+                url = "https://www.trackingplan.com"
+                licenses {
+                    license {
+                        name = "Copyright Trackingplan 2025 - All rights reserved"
+                    }
+                }
+                developers {
+                    developer {
+                        organization = "Trackingplan"
+                        organizationUrl = "https://www.trackingplan.com"
+                    }
+                }
+                scm {
+                    connection = "scm:git:git://github.com/trackingplan/trackingplan-android.git"
+                    developerConnection = "scm:git:ssh://github.com/trackingplan/trackingplan-android.git"
+                    url = "https://github.com/trackingplan/trackingplan-android/tree/main"
+                }
+            }
+        }
+
+        named<MavenPublication>("kotlinMultiplatform") {
+            artifactId = "shared"
+            pom {
+                name = "Trackingplan Shared"
+                description = "Shared library for Trackingplan SDK with metadata for all platforms"
+            }
+        }
+
+        named<MavenPublication>("android") {
+            artifactId = "shared-android"
+            pom {
+                name = "Trackingplan Shared - Android"
+                description = "Shared Android library for Trackingplan SDK"
+                packaging = "aar"
+            }
+        }
+    }
     repositories {
         maven {
             name = "sonatype"

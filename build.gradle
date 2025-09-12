@@ -34,6 +34,12 @@ tasks.register('buildPublishLocal', GradleBuild) {
 tasks.register('cleanBuildPublishSonatype', GradleBuild) {
     tasks = [
             'clean',
+            'buildPublishSonatype'
+    ]
+}
+
+tasks.register('buildPublishSonatype', GradleBuild) {
+    tasks = [
             'build',
             'adapter:publishAllPublicationsToSonatypeRepository',
             'sdk:publishAllPublicationsToSonatypeRepository',
