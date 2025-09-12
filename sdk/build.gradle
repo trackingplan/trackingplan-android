@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
     id 'signing'
 }
@@ -41,12 +42,21 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
 dependencies {
+    // Kotlin standard library
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.0.21"
+
+    implementation project(':shared')
+    
     // Appcompat 1.6.1 requires API level 33 and depends on lifecycle-process 2.5.1.
     // Trackingplan SDK uses lifecycle-process as well so let's use the same version as Appcompat.
     implementation 'androidx.appcompat:appcompat:1.6.1'

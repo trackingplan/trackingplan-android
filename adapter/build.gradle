@@ -1,5 +1,6 @@
 plugins {
     id 'java-gradle-plugin'
+    id 'org.jetbrains.kotlin.jvm'
     id 'maven-publish'
     id 'signing'
 }
@@ -20,15 +21,16 @@ java {
     withJavadocJar()
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
-//compileKotlin {
-//    kotlinOptions.jvmTarget = JavaVersion.VERSION_11
-//}
+kotlin {
+    jvmToolchain(17)
+}
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.0.21"
     compileOnly gradleApi()
     compileOnly 'com.android.tools.build:gradle:8.0.2'
     // These are transitive dependencies from Android Gradle Plugin. The same versions are used like
@@ -68,20 +70,6 @@ publishing {
                     }
                 }
             }
-            adapter(MavenPublication) {
-                pom {
-                    name = "Trackingplan Android Adapter"
-                    description = "Gradle plugin for Trackingplan Android SDK"
-                    packaging = "jar"
-                }
-                from components.java
-            }
-            TrackingplanAdapterPluginPluginMarkerMaven {
-                pom {
-                    name = "Trackingplan Android Adapter"
-                    description = "Gradle plugin for Trackingplan Android SDK"
-                }
-            }
         }
     }
     repositories {
@@ -103,4 +91,10 @@ publishing {
 
 signing {
     sign publishing.publications
+}
+
+afterEvaluate {
+    tasks.withType(AbstractPublishToMaven) {
+        dependsOn tasks.withType(Sign)
+    }
 }
