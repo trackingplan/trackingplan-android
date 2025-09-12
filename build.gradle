@@ -1,11 +1,15 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id 'com.android.library' version '8.5.0' apply false
+    id 'com.android.library' version '8.9.3' apply false
+    id 'org.jetbrains.kotlin.android' version '2.0.21' apply false
+    id 'org.jetbrains.kotlin.multiplatform' version '2.0.21' apply false
+    id 'com.android.kotlin.multiplatform.library' version '8.9.3' apply false
+    id 'com.android.lint' version '8.9.3' apply false
 }
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "2.1.0-SNAPSHOT"
+    TrackingplanVersion = "2.2.0-SNAPSHOT"
 }
 
 tasks.register('clean', Delete) {
@@ -17,11 +21,26 @@ tasks.register('cleanBuildPublishLocal', GradleBuild) {
 }
 
 tasks.register('buildPublishLocal', GradleBuild) {
-    tasks = ['build', 'publishAdapterPublicationToMavenLocal', 'publishSdkPublicationToMavenLocal', 'publishJunitPublicationToMavenLocal', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToMavenLocal']
+    tasks = [
+            'build',
+            'adapter:publishToMavenLocal',
+            'sdk:publishToMavenLocal',
+            'junit-tools:publishToMavenLocal',
+            'shared:publishAndroidPublicationToMavenLocal',
+            'shared:publishKotlinMultiplatformPublicationToMavenLocal'
+    ]
 }
 
 tasks.register('cleanBuildPublishSonatype', GradleBuild) {
-    tasks = ['clean', 'build', 'publishAdapterPublicationToSonatypeRepository', 'publishSdkPublicationToSonatypeRepository', 'publishJunitPublicationToSonatypeRepository', 'publishTrackingplanAdapterPluginPluginMarkerMavenPublicationToSonatypeRepository']
+    tasks = [
+            'clean',
+            'build',
+            'adapter:publishAllPublicationsToSonatypeRepository',
+            'sdk:publishAllPublicationsToSonatypeRepository',
+            'junit-tools:publishAllPublicationsToSonatypeRepository',
+            'shared:publishAndroidPublicationToSonatypeRepository',
+            'shared:publishKotlinMultiplatformPublicationToSonatypeRepository'
+    ]
 }
 
 // Load local.properties to ext
