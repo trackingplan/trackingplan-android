@@ -43,7 +43,7 @@ Select the `project-level build.gradle.kts` file and add the Trackingplan plugin
 ```kotlin
 plugins {
     // ...
-    id("com.trackingplan.client") version "2.0.0" apply false
+    id("com.trackingplan.client") version "2.1.0" apply false
     // ...
 }
 ```
@@ -59,11 +59,11 @@ plugins {
 }
 ```
 
-- Add `implementation("com.trackingplan.client:sdk:2.0.0")` to the dependencies section:
+- Add `implementation("com.trackingplan.client:sdk:2.1.0")` to the dependencies section:
 ```kotlin
 dependencies {
     // ...
-    implementation("com.trackingplan.client:sdk:2.0.0")
+    implementation("com.trackingplan.client:sdk:2.1.0")
     // ...
 }
 ```
@@ -75,7 +75,7 @@ Select the `project-level build.gradle` file and add the Trackingplan plugin to 
 ```gradle
 plugins {
     // ...
-    id 'com.trackingplan.client' version '2.0.0' apply false
+    id 'com.trackingplan.client' version '2.1.0' apply false
     // ...
 }
 ```
@@ -91,11 +91,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:2.0.0'` to the dependencies section:
+- Add `implementation 'com.trackingplan.client:sdk:2.1.0'` to the dependencies section:
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:2.0.0'
+    implementation 'com.trackingplan.client:sdk:2.1.0'
     // ...
 }
 ```
@@ -231,12 +231,12 @@ buildTypes {
 
 Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
 
-1. Add `com.trackingplan.client:junit-tools:2.0.0` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
+1. Add `com.trackingplan.client:junit-tools:2.1.0` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
 
     ```gradle
     dependencies {
         // ...
-        androidTestImplementation "com.trackingplan.client:junit-tools:2.0.0"
+        androidTestImplementation "com.trackingplan.client:junit-tools:2.1.0"
         // ...
     }
     ```
