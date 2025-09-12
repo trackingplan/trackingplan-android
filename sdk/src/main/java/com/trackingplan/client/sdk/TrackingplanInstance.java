@@ -28,7 +28,9 @@ import com.trackingplan.client.sdk.util.JSONUtils;
 import com.trackingplan.client.sdk.util.ScreenViewTracker;
 import com.trackingplan.client.sdk.util.TaskRunner;
 import com.trackingplan.client.sdk.util.ThreadUtils;
+import com.trackingplan.shared.UrlMatcherJava;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -92,6 +94,7 @@ final public class TrackingplanInstance {
     private final Handler handler;
     private final AtomicInteger numActiveTasks;
 
+    @NotNull
     private final Map<String, String> providers;
     private final RequestQueue requestQueue;
 
@@ -713,29 +716,27 @@ final public class TrackingplanInstance {
             return;
         }
 
-        for (String partialUrl : providers.keySet()) {
-            if (!request.getUrl().contains(partialUrl)) {
-                continue;
-            }
-            var provider = providers.get(partialUrl);
-            if (provider != null) {
-                request.setProvider(provider);
-            }
+        String matchedProvider = UrlMatcherJava.matchProvider(providers, request.getUrl());
+        if (matchedProvider == null) {
+            return;
         }
+
+        request.setProvider(matchedProvider);
     }
 
     /**
      * List of supported providers. This list is used by okhttp and urlconnection interceptors.
      */
-    private Map<String, String> makeDefaultProviders() {
+    private @NotNull Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
-            put("api.amplitude.com", "amplitude");
-            put("api2.amplitude.com", "amplitude");
+            put("regex:api[0-9]*\\.amplitude\\.com", "amplitude");
             put("bat.bing.com", "bing");
+            put("regex:api[0-9]*\\.branch\\.io/v[0-9]+", "branch");
             put("ping.chartbeat.net", "chartbeat");
             put("track-sdk-eu.customer.io/api", "customerio"); // Europe Region
             put("track-sdk.customer.io/api", "customerio"); // USA Region
             put("facebook.com/tr/", "facebook");
+            put("graph.facebook.com/*/*/activities", "facebook");
             put("api.intercom.io", "intercom");
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");
@@ -748,6 +749,8 @@ final public class TrackingplanInstance {
             put("sb.scorecardresearch.com", "scorecardresearch");
             put("api.segment.io", "segment");
             put("api.segment.com", "segment");
+            put("analytics.us.tiktok.com/api/v1/app_sdk/batch", "tiktok");
+            put("analytics.us.tiktok.com/api/v1/app_sdk/monitor", "tiktok");
         }};
     }
 
