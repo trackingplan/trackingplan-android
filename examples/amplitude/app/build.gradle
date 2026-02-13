@@ -4,12 +4,13 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    namespace 'com.trackingplan.examples.amplitude'
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.trackingplan.examples.amplitude"
-        minSdk 21
-        targetSdk 32
+        minSdk 24
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -36,7 +37,7 @@ android {
 
 dependencies {
 
-    implementation 'com.trackingplan.client:sdk:1.2.0-SNAPSHOT'
+    implementation 'com.trackingplan.client:sdk:2.1.0'
 
     implementation 'com.amplitude:android-sdk:2.32.1'
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
