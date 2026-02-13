@@ -10,7 +10,6 @@
   - [Trackingplan Initialization](#trackingplan-initialization)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
-- [Trackingplan for Regression Testing](#trackingplan-for-regression-testing)
 - [Building from source code](#building-from-source-code)
 - [Troubleshooting](#troubleshooting)
 - [Need help?](#need-help)
@@ -259,68 +258,6 @@ buildTypes {
     }
 }
 ```
-
-## Trackingplan for Regression Testing
-
-Trackingplan for Android supports running as part of your instrumented tests. This way, existing tests can be used to catch analytics data problems before they get into production. In order to do so, follow the steps below:
-
-1. Add `com.trackingplan.client:junit-tools:2.1.0` as `androidTestImplementation` dependency to the dependencies section of your `module-level build.gradle` file:
-
-    ```gradle
-    dependencies {
-        // ...
-        androidTestImplementation "com.trackingplan.client:junit-tools:2.1.0"
-        // ...
-    }
-    ```
-
-2. Setup the `TrackingplanRule` rule in your instrumented test code:
-
-    ```java
-    @Rule
-    public TrackingplanRule trackingplanRule =
-        TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
-                .tags(new HashMap<>() {{
-                    put("test_title", "My test");
-                    put("test_session_name", "My session");
-                }})
-                //.dryRun()
-                .newRule();
-    ```
-
-    Or in Kotlin:
-
-    ```kotlin
-    @get:Rule
-    val trackingplanRule = TrackingplanJUnit.init("YOUR_TP_ID", "YOUR_ENVIRONMENT")
-        .tags(mapOf(
-            "test_title" to "My Test",
-            "test_session_name" to "My Session"
-        ))
-        //.dryRun()
-        .newRule()
-    ```
-
-    The `TrackingplanRule` will initialize the SDK before each test is executed, ensuring that all collected data is sent to Trackingplan after every test.
-
-3. Add `TrackingplanJunitRunner` to your `module-level build.gradle`:
-
-    ```gradle
-    android {
-        ...
-        defaultConfig {
-            testInstrumentationRunner "com.trackingplan.client.junit.TrackingplanJUnitRunner"
-        }
-    }
-    ```
-
-    Alternatively, if your project is already using a custom `AndroidJunitRunner` class, modify the `callApplicationOnCreate` method to include this:
-
-    ```java
-    Trackingplan.enableInstrumentedTestMode();
-    ```
-
-    This will turn off the initialization snippet of the Trackingplan SDK in your app.
 
 ## Building from source code
 
