@@ -6,7 +6,7 @@ plugins {
 }
 
 group rootProject.ext.groupId
-version "${rootProject.ext.TrackingplanVersion}"
+version "${rootProject.ext.TrackingplanAdapterVersion}"
 
 gradlePlugin {
     plugins {
@@ -94,8 +94,8 @@ publishing {
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
 
             credentials {
-                username ossrhUsername
-                password ossrhPassword
+                username findProperty('ossrhUsername')
+                password findProperty('ossrhPassword')
             }
         }
     }
@@ -103,11 +103,6 @@ publishing {
 
 
 signing {
+    required { gradle.taskGraph.hasTask("publishAllPublicationsToSonatypeRepository") }
     sign publishing.publications
-}
-
-afterEvaluate {
-    tasks.withType(AbstractPublishToMaven) {
-        dependsOn tasks.withType(Sign)
-    }
 }
