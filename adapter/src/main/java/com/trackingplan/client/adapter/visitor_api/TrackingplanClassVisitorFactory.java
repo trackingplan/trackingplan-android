@@ -25,7 +25,6 @@ public abstract class TrackingplanClassVisitorFactory
         implements AsmClassVisitorFactory<InstrumentationParameters.None> {
 
     private static final GradleLogger logger = GradleLogger.getInstance();
-
     @NonNull
     @Override
     public ClassVisitor createClassVisitor(@NonNull ClassContext classContext, @NonNull ClassVisitor nextClassVisitor) {
@@ -54,7 +53,6 @@ public abstract class TrackingplanClassVisitorFactory
             }
         });
     }
-
     public static void registerForVariant(ApplicationVariant appVariant) {
         var instrumentation = appVariant.getInstrumentation();
         instrumentation.transformClassesWith(TrackingplanClassVisitorFactory.class, InstrumentationScope.ALL,

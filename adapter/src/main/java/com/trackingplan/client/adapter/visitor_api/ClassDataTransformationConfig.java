@@ -30,8 +30,21 @@ public class ClassDataTransformationConfig extends TransformationConfig {
             return null;
         }
 
+        // First try direct string matching on method signature (works for external libraries)
+        // This is the primary matching strategy for SDK interception
+        for (MethodVisitorTransformationConfig config : this.transformationConfigs) {
+            if (config.getClassName().equals(className)
+                    && config.getMethodName().equals(methodName)
+                    && config.getMethodDesc().equals(methodDesc)) {
+                return config.getFactory();
+            }
+        }
+
+        // Fallback: Use class hierarchy matching for subclasses/interfaces
+        // This handles cases where app extends SDK classes
         var classData = this.classContext.loadClassData(className.replace('/', '.'));
         if (classData == null) {
+            // Class data not available (external library), direct match already tried
             return null;
         }
 

@@ -6,10 +6,6 @@ import com.android.build.api.AndroidPluginVersion;
 import com.android.build.api.variant.AndroidComponentsExtension;
 import com.trackingplan.client.adapter.core.exceptions.CannotObtainAGPVersionException;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.gradle.api.Project;
 
 public class SimpleAGPVersion implements Comparable<SimpleAGPVersion> {
@@ -44,11 +40,8 @@ public class SimpleAGPVersion implements Comparable<SimpleAGPVersion> {
         );
     }
 
-    private static List<Integer> splitVersionParts(String version) {
-        String[] splits = version.split("\\.");
-        return Arrays.stream(splits)
-                .map(Integer::valueOf)
-                .collect(Collectors.toList());
+    public String toVersionString() {
+        return version.getMajor() + "." + version.getMinor() + "." + version.getMicro();
     }
 
     @Override

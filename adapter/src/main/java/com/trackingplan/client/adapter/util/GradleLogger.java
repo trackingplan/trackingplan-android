@@ -1,18 +1,17 @@
 // Copyright (c) 2022 Trackingplan
 package com.trackingplan.client.adapter.util;
 
-import com.android.annotations.NonNull;
-import com.trackingplan.client.adapter.TrackingplanPlugin;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
 
 public class GradleLogger {
 
-    private static final String LOG_TAG = TrackingplanPlugin.TP_ADAPTER_TAG;
     private static volatile GradleLogger instance;
-    
-    private final Logger logWrapper;
+    private static volatile String logFilePath;
 
     public static GradleLogger getInstance() {
         if (instance == null) {
@@ -25,54 +24,97 @@ public class GradleLogger {
         return instance;
     }
 
-    public GradleLogger(Logger logger) {
-        this.logWrapper = logger == null ? LoggerFactory.getLogger(LOG_TAG) : logger;
-    }
-
     private GradleLogger() {
-        this(null);
     }
 
     public void debug(String message) {
-        this.logWrapper.debug(getFormattedMessage(message));
+        writeToFile(message);
     }
 
     public void debug(String message, Object var2) {
-        this.logWrapper.debug(getFormattedMessage(message), var2);
+        writeToFile(formatMessage(message, var2));
     }
 
     public void debug(String message, Object var2, Object var3) {
-        this.logWrapper.debug(getFormattedMessage(message), var2, var3);
+        writeToFile(formatMessage(message, var2, var3));
     }
 
     public void debug(String message, Object... var2) {
-        this.logWrapper.debug(getFormattedMessage(message), var2);
+        writeToFile(formatMessage(message, var2));
     }
 
     public void info(String message) {
-        this.logWrapper.info(getFormattedMessage(message));
+        writeToFile(message);
     }
 
     public void info(String message, Object var2) {
-        this.logWrapper.info(getFormattedMessage(message), var2);
+        writeToFile(formatMessage(message, var2));
     }
 
     public void warn(String message) {
-        this.logWrapper.warn(getFormattedMessage(message));
+        writeToFile(message);
     }
 
     public void error(String message) {
-        this.logWrapper.error(getFormattedMessage(message));
+        writeToFile(message);
     }
 
     public void error(String message, Object var2) {
-        this.logWrapper.error(getFormattedMessage(message), var2);
+        writeToFile(formatMessage(message, var2));
     }
 
-    private String getFormattedMessage(@NonNull String message) {
-        if (this.logWrapper.isDebugEnabled()) {
-            return message;
+    private static boolean writeErrorLogged = false;
+    private static PrintWriter fileWriter;
+
+    public static synchronized void setLogFile(String path) {
+        resetFileWriter();
+        logFilePath = path;
+    }
+
+    public static synchronized void resetFileWriter() {
+        if (fileWriter != null) {
+            fileWriter.close();
+            fileWriter = null;
         }
-        return String.format("[%s] %s", LOG_TAG, message);
+        writeErrorLogged = false;
+    }
+
+    private static synchronized void writeToFile(String message) {
+        if (logFilePath == null) return;
+        try {
+            if (fileWriter == null) {
+                File logFile = new File(logFilePath);
+                logFile.getParentFile().mkdirs();
+                fileWriter = new PrintWriter(new BufferedWriter(new FileWriter(logFilePath, true)));
+            }
+            fileWriter.println(LocalDateTime.now() + " " + message);
+            fileWriter.flush();
+        } catch (IOException e) {
+            if (fileWriter != null) {
+                fileWriter.close();
+                fileWriter = null;
+            }
+            if (!writeErrorLogged) {
+                writeErrorLogged = true;
+                System.err.println("Trackingplan: failed to write log file " + logFilePath + ": " + e.getMessage());
+            }
+        }
+    }
+
+    private static String formatMessage(String template, Object... args) {
+        if (args == null || args.length == 0) return template;
+        StringBuilder sb = new StringBuilder();
+        int argIndex = 0;
+        int i = 0;
+        while (i < template.length()) {
+            if (i < template.length() - 1 && template.charAt(i) == '{' && template.charAt(i + 1) == '}' && argIndex < args.length) {
+                sb.append(args[argIndex++]);
+                i += 2;
+            } else {
+                sb.append(template.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
     }
 }

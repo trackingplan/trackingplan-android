@@ -3,10 +3,8 @@ package com.trackingplan.client.adapter.core.asm;
 
 import com.trackingplan.client.adapter.TrackingplanPlugin;
 import com.trackingplan.client.adapter.core.TransformationConfig;
-import com.trackingplan.client.adapter.core.exceptions.AlreadyTransformedException;
 import com.trackingplan.client.adapter.util.GradleLogger;
 
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.AdviceAdapter;
@@ -18,7 +16,6 @@ final public class AdapterClassVisitor extends ClassVisitor {
     private final ClassVisitor nextClassVisitor;
     private final TransformationConfig instrConfig;
     private String currentClassName;
-    private boolean ending;
 
     public AdapterClassVisitor(int asmApiVersion, ClassVisitor nextClassVisitor, TransformationConfig instrConfig) {
         super(asmApiVersion, nextClassVisitor);
@@ -32,21 +29,12 @@ final public class AdapterClassVisitor extends ClassVisitor {
         this.nextClassVisitor.visit(version, access, className, signature, superName, interfaces);
     }
 
-    public void visitAttribute(Attribute attribute) {
-        this.nextClassVisitor.visitAttribute(attribute);
-        if (!this.ending && attribute instanceof TransformedAttribute) {
-            throw new AlreadyTransformedException();
-        }
-    }
-
     public MethodVisitor visitMethod(int access, String methodName, String methodDesc, String signature, String[] exceptions) {
         MethodVisitor rootMethodVisitor = this.nextClassVisitor.visitMethod(access, methodName, methodDesc, signature, exceptions);
         return new TrackingplanMethodVisitor(this.api, rootMethodVisitor, access, methodName, methodDesc, this.instrConfig, currentClassName);
     }
 
     public void visitEnd() {
-        this.ending = true;
-        this.visitAttribute(new TransformedAttribute("instrumented"));
         super.visitEnd();
     }
 

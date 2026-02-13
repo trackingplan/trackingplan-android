@@ -10,6 +10,8 @@ import com.trackingplan.client.adapter.visitor_api.TrackingplanClassVisitorFacto
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
+import java.io.File;
+
 public class TrackingplanPlugin implements Plugin<Project> {
 
     public static final String TP_ADAPTER_TAG = "TrackingplanAdapterPlugin";
@@ -21,7 +23,6 @@ public class TrackingplanPlugin implements Plugin<Project> {
     private boolean foundApplicationPlugin = false;
 
     public TrackingplanPlugin() {
-        logger.info("Plugin Initialized");
     }
 
     @Override
@@ -38,6 +39,21 @@ public class TrackingplanPlugin implements Plugin<Project> {
     }
 
     private void perform(Project project) {
+        // Set up log file for adapter diagnostics (opt-in via -Ptrackingplan.transformLogging=true)
+        boolean transformLogging = "true".equals(
+            String.valueOf(project.findProperty("trackingplan.transformLogging"))
+        );
+
+        if (transformLogging) {
+            File logFile = new File(project.getLayout().getBuildDirectory().getAsFile().get(), "trackingplan.log");
+            GradleLogger.setLogFile(logFile.getAbsolutePath());
+            project.getLogger().lifecycle("Trackingplan log: " + logFile.getAbsolutePath());
+
+            project.getTasks().named("clean").configure(task -> {
+                task.doLast(t -> GradleLogger.resetFileWriter());
+            });
+        }
+
         AppExtension androidExt = project.getExtensions().getByType(AppExtension.class);
         registerExtension(androidExt);
 
@@ -50,7 +66,6 @@ public class TrackingplanPlugin implements Plugin<Project> {
         }
 
         final var gradlePluginVersion = SimpleAGPVersion.getAndroidGradlePluginVersion(project);
-        logger.info(String.format("Detected AGP Version: %s", gradlePluginVersion));
 
         // Enforce minimum AGP version requirement
         final var minimumRequiredVersion = new SimpleAGPVersion(8, 0, 2);
@@ -61,6 +76,10 @@ public class TrackingplanPlugin implements Plugin<Project> {
                 TP_ADAPTER_TAG, gradlePluginVersion
             ));
         }
+
+        logger.info(String.format("AGP Version: %s", gradlePluginVersion.toVersionString()));
+        logger.info(String.format("Gradle Version: %s", project.getGradle().getGradleVersion()));
+        logger.info(String.format("Java Version: %s", System.getProperty("java.version")));
 
         // Since minimum AGP is now 8.0.2+, we always use the Instrumentation/Variant API
         // The old Transform API has been removed starting with AGP 8.0
