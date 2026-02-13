@@ -3,7 +3,7 @@ plugins {
     id 'com.android.application' version '8.5.0' apply false
     id 'com.android.library' version '8.5.0' apply false
     id 'com.google.gms.google-services' version '4.4.2' apply false
-    id 'com.trackingplan.client' version '1.8.0-SNAPSHOT' apply false
+    id 'com.trackingplan.client' version '2.1.2' apply false
 }
 
 tasks.register('clean', Delete) {
