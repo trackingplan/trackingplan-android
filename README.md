@@ -6,11 +6,13 @@
 - [Add Trackingplan to your Android app](#add-trackingplan-to-your-android-app)
   - [Kotlin DSL (build.gradle.kts)](#kotlin-dsl-buildgradlekts)
   - [Groovy DSL (build.gradle)](#groovy-dsl-buildgradle)
+  - [Legacy buildscript setup](#legacy-buildscript-setup)
   - [Trackingplan Initialization](#trackingplan-initialization)
 - [Advanced options](#advanced-options)
 - [Disable Trackingplan](#disable-trackingplan)
 - [Trackingplan for Regression Testing](#trackingplan-for-regression-testing)
 - [Building from source code](#building-from-source-code)
+- [Troubleshooting](#troubleshooting)
 - [Need help?](#need-help)
 - [Learn more](#learn-more)
 
@@ -43,7 +45,7 @@ Select the `project-level build.gradle.kts` file and add the Trackingplan plugin
 ```kotlin
 plugins {
     // ...
-    id("com.trackingplan.client") version "2.1.0" apply false
+    id("com.trackingplan.client") version "2.1.2" apply false
     // ...
 }
 ```
@@ -75,7 +77,7 @@ Select the `project-level build.gradle` file and add the Trackingplan plugin to 
 ```gradle
 plugins {
     // ...
-    id 'com.trackingplan.client' version '2.1.0' apply false
+    id 'com.trackingplan.client' version '2.1.2' apply false
     // ...
 }
 ```
@@ -93,6 +95,37 @@ plugins {
 
 - Add `implementation 'com.trackingplan.client:sdk:2.1.0'` to the dependencies section:
 ```gradle
+dependencies {
+    // ...
+    implementation 'com.trackingplan.client:sdk:2.1.0'
+    // ...
+}
+```
+
+### Legacy buildscript setup
+
+If your project uses the legacy `buildscript` block instead of the `plugins` block, apply Trackingplan as follows:
+
+In your `project-level build.gradle`, add the adapter to the classpath:
+
+```gradle
+buildscript {
+    repositories {
+        // ...
+        mavenCentral()
+    }
+    dependencies {
+        // ...
+        classpath 'com.trackingplan.client:adapter:2.1.2'
+    }
+}
+```
+
+Then in your `module-level build.gradle`, apply the plugin and add the SDK dependency:
+
+```gradle
+apply plugin: 'com.trackingplan.client'
+
 dependencies {
     // ...
     implementation 'com.trackingplan.client:sdk:2.1.0'
@@ -317,6 +350,10 @@ allprojects {
 ```
 
 Remember to change the version of Trackingplan in your dependencies to  `1.2.0-SNAPSHOT`.
+
+## Troubleshooting
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for help diagnosing common issues like verifying bytecode transformations.
 
 ## Need help?
 Questions? Problems? Need more info? We can help! Contact us [here](mailto:team@trackingplan.com).
