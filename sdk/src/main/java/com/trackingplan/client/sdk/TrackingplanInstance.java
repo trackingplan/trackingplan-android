@@ -20,23 +20,32 @@ import androidx.lifecycle.LifecycleOwner;
 
 import com.trackingplan.client.sdk.interception.HttpRequest;
 import com.trackingplan.client.sdk.interception.InterceptionContext;
-import com.trackingplan.client.sdk.session.SamplingRate;
-import com.trackingplan.client.sdk.session.Storage;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.client.sdk.session.StorageMigration;
 import com.trackingplan.client.sdk.util.AndroidLog;
+import com.trackingplan.shared.SamplingOptions;
+import com.trackingplan.shared.Storage;
+import com.trackingplan.shared.TrackingplanIngestConfig;
+import com.trackingplan.shared.TrackingplanSession;
 import com.trackingplan.client.sdk.util.JSONUtils;
 import com.trackingplan.client.sdk.util.ScreenViewTracker;
 import com.trackingplan.client.sdk.util.TaskRunner;
 import com.trackingplan.client.sdk.util.ThreadUtils;
 import com.trackingplan.shared.UrlMatcherJava;
+import com.trackingplan.shared.adaptive.DropReason;
+import com.trackingplan.shared.adaptive.Request;
+import com.trackingplan.shared.adaptive.SamplingMode;
+import com.trackingplan.shared.adaptive.SamplingResult;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -97,6 +106,17 @@ final public class TrackingplanInstance {
     @NotNull
     private final Map<String, String> providers;
     private final RequestQueue requestQueue;
+    private final Queue<PreQueuedRequest> preQueue = new LinkedList<>();
+
+    private static class PreQueuedRequest {
+        final HttpRequest request;
+        final InterceptionContext context;
+
+        PreQueuedRequest(HttpRequest request, InterceptionContext context) {
+            this.request = request;
+            this.context = context;
+        }
+    }
 
     // NOTE: Application context has the same lifecycle as the app. So no leak is possible
     private final Context context;
@@ -117,9 +137,6 @@ final public class TrackingplanInstance {
 
     private RuntimeEnvironment runtimeEnvironment = RuntimeEnvironment.AndroidDefault;
 
-    // For testing purposes
-    private boolean fakeSamplingEnabled;
-
     @MainThread
     TrackingplanInstance(@NonNull final Context context) {
         ThreadUtils.checkRunningInMainThread();
@@ -127,7 +144,7 @@ final public class TrackingplanInstance {
         providers = makeDefaultProviders();
         config = TrackingplanConfig.EMPTY;
         requestQueue = new RequestQueue(this);
-        currentSession = TrackingplanSession.EMPTY;
+        currentSession = TrackingplanSession.Companion.getEMPTY();
 
         flushQueueLifeCycleObserver = new FlushQueueOnStopLifecycleObserver();
         sessionLifecycleObserver = new SessionLifecycleObserver();
@@ -139,9 +156,6 @@ final public class TrackingplanInstance {
         handler = HandlerCompat.createAsync(handlerThread.getLooper());
         numActiveTasks = new AtomicInteger(0);
         taskRunner = new TaskRunner(this.handler);
-
-        // For testing purposes
-        fakeSamplingEnabled = false;
     }
 
     @Override
@@ -158,14 +172,6 @@ final public class TrackingplanInstance {
     @VisibleForTesting
     public void setRuntimeEnvironment(RuntimeEnvironment runtime) {
         this.runtimeEnvironment = runtime;
-        if (!fakeSamplingEnabled && runtime == AndroidJUnit) {
-            fakeSamplingEnabled = true;
-        }
-    }
-
-    @VisibleForTesting
-    public void setFakeSamplingEnabled(boolean enabled) {
-        fakeSamplingEnabled = enabled;
     }
 
     @MainThread
@@ -228,7 +234,12 @@ final public class TrackingplanInstance {
             }
 
             this.config = config;
-            this.storage = new Storage(config.getTpId(), config.getEnvironment(), context);
+            try {
+                this.storage = StorageMigration.createWithMigration(config.getTpId(), config.getEnvironment());
+            } catch (Exception e) {
+                logger.error("Failed to create storage: " + e.getMessage());
+                return;
+            }
 
             providers.clear();
             providers.putAll(makeDefaultProviders());
@@ -254,6 +265,7 @@ final public class TrackingplanInstance {
         // Stop in Trackingplan thread
         runSync(() -> {
             requestQueue.stop();
+            preQueue.clear();
 
             // Wait for pending taskRunner tasks to finish
             final CountDownLatch lock = new CountDownLatch(1);
@@ -265,7 +277,7 @@ final public class TrackingplanInstance {
             }
 
             stopSession();
-            this.currentSession = TrackingplanSession.EMPTY;
+            this.currentSession = TrackingplanSession.Companion.getEMPTY();
             this.config = TrackingplanConfig.EMPTY;
 
             logger.info("Trackingplan stopped");
@@ -341,62 +353,98 @@ final public class TrackingplanInstance {
     }
 
     /**
-     * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder.
-     * Note that a queue is used for intercepted requests so that they are grouped into batches
-     * before sending to Trackingplan. Regarding this, request are enqueued while the SDK isn't
-     * configured. So if it never gets configured the intercepted requests might end up filling all
-     * the memory available. To avoid this problem client code should call Trackingplan.stop(Context).
-     * to stop any interception.
+     * This method is the entry point to Trackingplan. It's called from InstrumentRequestBuilder
+     * after Trackingplan.init(...).start() is called. Note that a queue is used for intercepted
+     * requests so that they are grouped into batches before sending to Trackingplan.
+     *
+     * Session is empty before Trackingplan.init(...).start() completes because session
+     * start/resume runs asynchronously. Intercepted requests that arrive before session
+     * initialization are pre-queued and processed when the session becomes available.
      */
     public void processRequest(
             @NonNull final HttpRequest request,
             @NonNull final InterceptionContext interceptionContext
     ) {
         checkRunningInTrackingplanThread();
-
-        // Session is empty before Trackingplan.init(...).start() is called. So queue these requests
-        // unless a valid session is started and tracking is disabled.
-        if (!currentSession.getSessionId().isEmpty() && !currentSession.isTrackingEnabled()) {
-            logger.verbose("Request ignored. Tracking disabled for current session");
-            return;
-        }
+        logger.verbose("Processing request: " + request.getUrl());
 
         try {
-            initRequestContext(request, interceptionContext);
-
-            // Note that initRequestDestination depends on TrackingplanConfig#customDomains setting.
-            // This means that intercepted requests targeted to any customDomain are ignored
-            // before Trackingplan.init(...).start() call.
-            initRequestDestination(request);
-
-            if (!isTargetedToSupportedDestination(request)) {
-                logger.verbose("Request ignored. Doesn't belong to a supported destination");
+            // PreQueue raw requests that arrive before session is available.
+            // Defer initRequestContext/initRequestDestination until processing,
+            // so custom domains (from config) are properly matched.
+            if (currentSession.getSessionId().isEmpty()) {
+                preQueue.add(new PreQueuedRequest(request, interceptionContext));
+                logger.verbose("Request pre-queued (session not ready)");
                 return;
             }
 
-            requestQueue.queueRequest(request);
-
-            // Do not process queue if there is no config or currentSession is not yet a valid
-            if (!isConfigured() || !currentSession.isTrackingEnabled()) {
-                return;
-            }
-
-            // Keep reference to session in case currentSession changes while processing the queue
-            final var session = currentSession;
-
-            // Process queue if there is at least one batch to send
-            requestQueue.processQueue(session, false, () -> {
-                // Check that the session is still the same
-                if (!currentSession.getSessionId().equals(session.getSessionId())) return;
-                if (currentSession.updateLastActivity()) {
-                    storage.saveSession(currentSession);
-                    logger.verbose("Last session activity updated and saved");
-                }
-            });
+            // Normal flow: init, evaluate sampling, and queue
+            processRequestWithSession(request, interceptionContext);
 
         } catch (Exception ex) {
             logger.error("Request processing failed: " + ex.getMessage());
         }
+    }
+
+    private void processRequestWithSession(
+            @NonNull final HttpRequest request,
+            @NonNull final InterceptionContext interceptionContext
+    ) {
+        initRequestContext(request, interceptionContext);
+        initRequestDestination(request);
+
+        if (!isTargetedToSupportedDestination(request)) {
+            logger.verbose("Request ignored. Doesn't belong to a supported destination");
+            return;
+        }
+
+        Request sharedRequest = new Request(
+                request.getProvider(),
+                request.getUrl(),
+                request.getPayloadData().length > 0
+                        ? new String(request.getPayloadData(), StandardCharsets.UTF_8)
+                        : null
+        );
+        SamplingResult result = currentSession.evaluateSamplingDecision(sharedRequest);
+        if (result instanceof SamplingResult.Drop) {
+            DropReason reason = ((SamplingResult.Drop) result).getReason();
+            logger.verbose("Request dropped (reason: " + reason.getValue() + ")");
+            return;
+        }
+        request.setSamplingResult((SamplingResult.Include) result);
+
+        requestQueue.queueRequest(request);
+
+        // Keep reference to session in case currentSession changes while processing the queue
+        final var session = currentSession;
+
+        // Process queue if there is at least one batch to send
+        requestQueue.processQueue(session, false, () -> {
+            // Check that the session is still the same
+            if (!currentSession.getSessionId().equals(session.getSessionId())) return;
+            if (currentSession.updateLastActivity()) {
+                storage.saveSession(currentSession);
+                logger.verbose("Last session activity updated and saved");
+            }
+        });
+    }
+
+    private void processPreQueue() {
+        checkRunningInTrackingplanThread();
+
+        if (preQueue.isEmpty()) {
+            return;
+        }
+
+        int count = preQueue.size();
+        logger.debug("Processing " + count + " pre-queued requests...");
+
+        while (!preQueue.isEmpty()) {
+            PreQueuedRequest item = preQueue.poll();
+            processRequestWithSession(item.request, item.context);
+        }
+
+        logger.debug("Pre-queue processed");
     }
 
     /**
@@ -432,6 +480,7 @@ final public class TrackingplanInstance {
             return;
         }
 
+        logger.debug("Queued Trackingplan " + eventName + " event");
         final var request = builder.build();
         final var interceptionContext = InterceptionContext.createInterceptionContext(context);
         processRequest(request, interceptionContext);
@@ -450,8 +499,9 @@ final public class TrackingplanInstance {
         final CountDownLatch lock = new CountDownLatch(1);
 
         final Runnable handler = () -> {
-            if (!isConfigured() || !currentSession.isTrackingEnabled()) {
-                logger.debug("Processing queue ignored because of missing configuration");
+            // No trackingEnabled check - requests in queue have already passed sampling evaluation
+            if (!isConfigured() || currentSession.getSessionId().isEmpty()) {
+                logger.debug("Processing queue ignored because session is not ready");
                 lock.countDown();
                 return;
             }
@@ -521,9 +571,9 @@ final public class TrackingplanInstance {
 
         checkRunningInTrackingplanThread();
 
-        // Force getting the sampling rate in order to trigger download every 24 hour as it might not
+        // Force loading/downloading ingest config every 24 hours as it might not
         // be downloaded in case of long sessions (a session spanning over a period larger than 24 hours).
-        getSamplingRate();
+        loadOrDownloadIngestConfig();
 
         // Note that new session is started (and previous one is expired) after a period of inactivity
         // Let's assume that queue was empty before the app received new activity so any pending
@@ -546,47 +596,37 @@ final public class TrackingplanInstance {
 
         // Trigger new_session event every time a new session is started
         if (session.isNew()) {
-            logger.verbose("New session");
             queueTrackingplanEvent("new_session", null);
         }
 
         // Trigger new_dau event if last one was sent 24h ago
         if (storage.wasLastDauSent24hAgo()) {
-            logger.verbose("New daily active user");
             queueTrackingplanEvent("new_dau", null);
             forceSendBatch = true;
         }
 
         // Trigger new_user event the first time it is executed.
         if (storage.isFirstTimeExecution()) {
-            logger.verbose("First time execution");
             queueTrackingplanEvent("new_user", null);
             forceSendBatch = true;
         }
 
         // All events triggered during startSession should have been queued before this assignment
-        // to avoid useless calls to requestQueue.processQueue.
         currentSession = session;
 
-        if (!currentSession.isTrackingEnabled()) {
-            int numPendingRequests = requestQueue.discardPendingRequests();
-            logger.debug("Tracking is disabled for this session");
-            if (numPendingRequests > 0) {
-                logger.debug(numPendingRequests + " pending intercepted requests were discarded");
-            }
-            return;
-        }
+        // Process pre-queued requests through normal flow (includes adaptive sampling)
+        processPreQueue();
 
         // Reference used by processQueue callback
         final var storage = this.storage;
 
-        // Process pending requests that happened before session was started
+        // Process pending requests (including those rescued by adaptive sampling)
         requestQueue.processQueue(currentSession, forceSendBatch, () -> {
             if (storage.isFirstTimeExecution()) {
-                storage.saveFirstTimeExecution();
+                storage.saveFirstTimeExecutionNow();
             }
             if (storage.wasLastDauSent24hAgo()) {
-                storage.saveLastDauEventSentTime();
+                storage.saveLastDauEventSentTimeNow();
             }
         });
     }
@@ -622,18 +662,20 @@ final public class TrackingplanInstance {
             return session;
         }
 
-        logger.verbose("Previous session expired or doesn't exist. Creating a new session...");
+        logger.debug("Previous session expired or doesn't exist. Creating a new session...");
 
-        final var samplingRate = getSamplingRate();
+        final var ingestConfig = loadOrDownloadIngestConfig();
 
         // New session
-        if (!samplingRate.hasExpired()) {
-            session = TrackingplanSession.newSession(samplingRate.getValue(), samplingRate.isTrackingEnabled());
-            logger.verbose("New session created with tracking " + (session.isTrackingEnabled() ? "enabled" : "disabled"));
+        if (ingestConfig != null && !storage.getIngestConfigCache().hasExpired()) {
+            int samplingRate = ingestConfig.getSamplingRate(config.getEnvironment());
+            boolean trackingEnabled = storage.loadTrackingEnabled();
+            session = TrackingplanSession.Companion.newSession(samplingRate, trackingEnabled, ingestConfig.getOptions());
+            logger.debug("New session created with tracking " + (session.getTrackingEnabled() ? "enabled" : "disabled"));
         } else {
             // Create a new session with tracking disabled.
-            session = TrackingplanSession.newSession(session.getSamplingRate(), false);
-            logger.verbose("New session created with tracking disabled because sampling rate was outdated");
+            session = TrackingplanSession.Companion.newSession(session.getSamplingRate(), false, SamplingOptions.Companion.getEMPTY());
+            logger.debug("New session created with tracking disabled because ingest config was outdated");
         }
 
         storage.saveSession(session);
@@ -642,54 +684,57 @@ final public class TrackingplanInstance {
         return session;
     }
 
-    @NonNull
-    private SamplingRate getSamplingRate() {
+    /**
+     * Loads the ingest config from cache or downloads it if expired/missing.
+     *
+     * @return The ingest config, or null if download failed
+     */
+    private TrackingplanIngestConfig loadOrDownloadIngestConfig() {
 
         checkRunningInTrackingplanThread();
 
-        var samplingRate = storage.loadSamplingRate();
-
-        if (!samplingRate.hasExpired()) {
-            logger.verbose("Previous sampling rate found and is still valid");
-            logger.verbose("Sampling: " + samplingRate);
-            return samplingRate;
+        // Try loading from cache first
+        TrackingplanIngestConfig cachedConfig = storage.getIngestConfigCache().loadIfValid();
+        if (cachedConfig != null) {
+            logger.verbose("Previous ingest config found and is still valid");
+            logger.verbose("Sampling rate: " + cachedConfig.getSamplingRate(config.getEnvironment()));
+            return cachedConfig;
         }
 
-        logger.verbose("Sampling rate expired. Downloading...");
+        logger.verbose("Ingest config expired or not found. Downloading...");
 
-        if (fakeSamplingEnabled) {
-            samplingRate = new SamplingRate(1.0f);
-            storage.saveSamplingRate(samplingRate);
-            logger.debug("Sampling rate downloaded and saved");
-            logger.verbose("Sampling: " + samplingRate);
-        } else {
+        TrackingplanIngestConfig ingestConfig = null;
+        var numAttempts = 2;
+        Exception lastError = null;
 
-            var numAttempts = 2;
-            Exception lastError;
-
-            do {
-                try {
-                    samplingRate = new SamplingRate(client.getSamplingRate());
+        do {
+            try {
+                String rawJson = client.downloadIngestConfigRaw();
+                storage.getIngestConfigCache().save(rawJson);
+                ingestConfig = storage.getIngestConfigCache().loadIfValid();
+                if (ingestConfig != null) {
+                    boolean trackingEnabled = ingestConfig.shouldEnableTracking(config.getEnvironment());
+                    storage.saveTrackingEnabled(trackingEnabled);
                     lastError = null;
-                    storage.saveSamplingRate(samplingRate);
-                    logger.debug("Sampling rate downloaded and saved");
-                    logger.verbose("Sampling: " + samplingRate);
-                } catch (Exception ex) {
-                    numAttempts -= 1;
-                    lastError = ex;
-                    SystemClock.sleep(1000);
+                    logger.debug("Ingest config downloaded and saved");
+                    logger.verbose("Sampling rate: " + ingestConfig.getSamplingRate(config.getEnvironment()));
+                } else {
+                    throw new Exception("Failed to parse or validate downloaded config");
                 }
-            } while (lastError != null && numAttempts > 0);
-
-            if (lastError != null) {
-                // TODO: Cancel any previous retry
-                logger.error("Sampling rate download failed:\n\t" + lastError);
-                logger.verbose(samplingRate.toString());
-                runSyncDelayed(FETCH_CONFIG_RETRY_INTERVAL_MS, this::getSamplingRate);
+            } catch (Exception ex) {
+                numAttempts -= 1;
+                lastError = ex;
+                SystemClock.sleep(1000);
             }
+        } while (lastError != null && numAttempts > 0);
+
+        if (lastError != null) {
+            // TODO: Cancel any previous retry
+            logger.error("Ingest config download failed:\n\t" + lastError);
+            runSyncDelayed(FETCH_CONFIG_RETRY_INTERVAL_MS, this::loadOrDownloadIngestConfig);
         }
 
-        return samplingRate;
+        return ingestConfig;
     }
 
     private void initRequestContext(HttpRequest request, InterceptionContext interceptionContext) {
@@ -736,7 +781,8 @@ final public class TrackingplanInstance {
             put("track-sdk-eu.customer.io/api", "customerio"); // Europe Region
             put("track-sdk.customer.io/api", "customerio"); // USA Region
             put("facebook.com/tr/", "facebook");
-            put("graph.facebook.com/*/*/activities", "facebook");
+            put("graph.facebook.com/*/*/activities", "facebookgraph");
+            put("regex:ep[0-9]+\\.facebook\\.com/.*/activities", "facebookgraph");
             put("api.intercom.io", "intercom");
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");

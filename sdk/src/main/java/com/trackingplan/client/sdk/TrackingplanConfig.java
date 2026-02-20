@@ -4,34 +4,30 @@ package com.trackingplan.client.sdk;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.trackingplan.shared.TrackingplanConfigBuilder;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * Immutable class
+ * Immutable class.
+ * Wraps the shared TrackingplanConfig and adds Android-specific configuration.
  */
 final public class TrackingplanConfig {
 
-    public static final int MAX_REQUEST_BODY_SIZE_IN_BYTES = 100 * 1024;
+    public static final int MAX_REQUEST_BODY_SIZE_IN_BYTES =
+            com.trackingplan.shared.TrackingplanConfig.MAX_REQUEST_BODY_SIZE_IN_BYTES;
 
     public final static TrackingplanConfig EMPTY = new TrackingplanConfig();
 
-    private String tpId;
-    private String environment;
-    private String sourceAlias;
-    private final Map<String, String> customDomains = new HashMap<>();
-    private final Map<String, String> tags = new HashMap<>();
-    private final Map<String, String> customContext = new HashMap<>();
+    // Shared configuration (contains common fields)
+    private final com.trackingplan.shared.TrackingplanConfig sharedConfig;
 
-    private boolean debug;
-    private boolean dryRun;
-    private boolean testing;
-    private boolean backgroundObserver;
-
-    private String tracksEndPoint;
-    private String configEndPoint;
+    // Android-specific fields
+    private final Map<String, String> customContext;
+    private final boolean backgroundObserver;
 
     @VisibleForTesting
     public static Builder newConfig(@NonNull String tpId) {
@@ -39,25 +35,25 @@ final public class TrackingplanConfig {
     }
 
     private TrackingplanConfig() {
-        this.tpId = "";
-        this.environment = "PRODUCTION";
-        this.sourceAlias = "android";
-        this.debug = false;
-        this.dryRun = false;
-        this.testing = false;
+        // Use empty() factory for sentinel/placeholder values
+        this.sharedConfig = com.trackingplan.shared.TrackingplanConfig.Companion.empty();
+        this.customContext = Collections.emptyMap();
         this.backgroundObserver = true;
-        this.tracksEndPoint = "https://eu-tracks.trackingplan.com/v1/";
-        this.configEndPoint = "https://config.trackingplan.com/";
     }
 
-    private TrackingplanConfig(String tpId) {
-        this();
-        this.tpId = tpId;
+    private TrackingplanConfig(
+            com.trackingplan.shared.TrackingplanConfig sharedConfig,
+            Map<String, String> customContext,
+            boolean backgroundObserver
+    ) {
+        this.sharedConfig = sharedConfig;
+        this.customContext = Collections.unmodifiableMap(new HashMap<>(customContext));
+        this.backgroundObserver = backgroundObserver;
     }
 
     @NonNull
     public String getTpId() {
-        return tpId;
+        return sharedConfig.getTpId();
     }
 
     public boolean isBackgroundObserverEnabled() {
@@ -65,54 +61,54 @@ final public class TrackingplanConfig {
     }
 
     public boolean isDebugEnabled() {
-        return debug;
+        return sharedConfig.getDebug();
     }
 
     boolean isTestingEnabled() {
-        return testing;
+        return sharedConfig.getTesting();
     }
 
     public boolean isDryRunEnabled() {
-        return dryRun;
+        return sharedConfig.getDryRun();
     }
 
     public String getSourceAlias() {
-        return sourceAlias;
+        return sharedConfig.getSourceAlias();
     }
 
     @NonNull
     public String getEnvironment() {
-        return environment;
+        return sharedConfig.getEnvironment();
     }
 
     @NonNull
     public Map<String, String> customContext() {
-        return Collections.unmodifiableMap(customContext);
+        return customContext;
     }
 
     @NonNull
     public Map<String, String> customDomains() {
-        return Collections.unmodifiableMap(customDomains);
+        return sharedConfig.getProviderDomains();
     }
 
     @NonNull
     public Map<String, String> tags() {
-        return Collections.unmodifiableMap(tags);
+        return sharedConfig.getTags();
     }
 
     @NonNull
     public String getTracksEndPoint() {
-        return tracksEndPoint;
+        return sharedConfig.getTracksEndpoint();
     }
 
     @NonNull
     public String getConfigEndPoint() {
-        return configEndPoint;
+        return sharedConfig.getConfigEndpoint();
     }
 
     /**
      * Creates a new TrackingplanConfig instance with updated tags.
-     * 
+     *
      * @param newTags The tags to add or set. Must not be null.
      * @param replace If true, replaces all existing tags with the new tags.
      *                If false, merges new tags with existing tags (new values overwrite existing ones for same keys).
@@ -120,44 +116,24 @@ final public class TrackingplanConfig {
      */
     @NonNull
     public TrackingplanConfig withTags(@NonNull Map<String, String> newTags, boolean replace) {
-        TrackingplanConfig newConfig = new TrackingplanConfig(this.tpId);
-        
-        // Copy all existing configuration
-        newConfig.environment = this.environment;
-        newConfig.sourceAlias = this.sourceAlias;
-        newConfig.debug = this.debug;
-        newConfig.dryRun = this.dryRun;
-        newConfig.testing = this.testing;
-        newConfig.backgroundObserver = this.backgroundObserver;
-        newConfig.tracksEndPoint = this.tracksEndPoint;
-        newConfig.configEndPoint = this.configEndPoint;
-        
-        // Copy existing maps
-        newConfig.customDomains.putAll(this.customDomains);
-        newConfig.customContext.putAll(this.customContext);
-        
-        // Handle tags based on replace parameter
-        if (replace) {
-            // Replace: only use new tags
-            newConfig.tags.putAll(newTags);
-        } else {
-            // Merge: existing tags + new tags (new tags overwrite existing ones)
-            newConfig.tags.putAll(this.tags);
-            newConfig.tags.putAll(newTags);
-        }
-        
-        return newConfig;
+        com.trackingplan.shared.TrackingplanConfig updatedSharedConfig =
+                sharedConfig.withTags(newTags, replace);
+        return new TrackingplanConfig(
+                updatedSharedConfig,
+                this.customContext,
+                this.backgroundObserver
+        );
     }
 
     @Override
     @NonNull
     public String toString() {
         return "TrackingplanConfig{" +
-                "tpId='" + tpId + '\'' +
-                ", environment='" + environment + '\'' +
-                ", sourceAlias='" + sourceAlias + '\'' +
-                ", dryRun='" + dryRun + '\'' +
-                ", debug='" + debug + '\'' +
+                "tpId='" + getTpId() + '\'' +
+                ", environment='" + getEnvironment() + '\'' +
+                ", sourceAlias='" + getSourceAlias() + '\'' +
+                ", dryRun='" + isDryRunEnabled() + '\'' +
+                ", debug='" + isDebugEnabled() + '\'' +
                 '}';
     }
 
@@ -167,76 +143,68 @@ final public class TrackingplanConfig {
         if (o == null || getClass() != o.getClass()) return false;
         TrackingplanConfig that = (TrackingplanConfig) o;
         return backgroundObserver == that.backgroundObserver
-                && configEndPoint.equals(that.configEndPoint)
                 && customContext.equals(that.customContext)
-                && customDomains.equals(that.customDomains)
-                && debug == that.debug
-                && dryRun == that.dryRun
-                && environment.equals(that.environment)
-                && tags.equals(that.tags)
-                && tpId.equals(that.tpId)
-                && tracksEndPoint.equals(that.tracksEndPoint)
-                && sourceAlias.equals(that.sourceAlias);
+                && sharedConfig.equals(that.sharedConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(backgroundObserver, configEndPoint, customContext, customDomains,
-                debug, dryRun, environment, tags, tpId, tracksEndPoint, sourceAlias);
+        return Objects.hash(sharedConfig, customContext, backgroundObserver);
     }
 
     public static class Builder {
 
-        private TrackingplanConfig config;
+        private final TrackingplanConfigBuilder sharedBuilder;
+        private final Map<String, String> customContext = new HashMap<>();
+        private boolean backgroundObserver = true;
 
         public Builder(String tpId) {
             if (tpId.isEmpty()) {
                 throw new IllegalArgumentException("Parameter tpId cannot be empty");
             }
-            config = new TrackingplanConfig(tpId);
+            sharedBuilder = new TrackingplanConfigBuilder().tpId(tpId);
         }
 
         public Builder configEndPoint(@NonNull String configEndPoint) {
-            config.configEndPoint = endPointInput(configEndPoint);
+            sharedBuilder.configEndpoint(configEndPoint);
             return this;
         }
 
         @VisibleForTesting
         public Builder customContext(@NonNull Map<String, String> context) {
-            config.customContext.clear();
-            config.customContext.putAll(context);
+            this.customContext.clear();
+            this.customContext.putAll(context);
             return this;
         }
 
         public Builder customDomains(@NonNull Map<String, String> customDomains) {
-            config.customDomains.clear();
-            config.customDomains.putAll(customDomains);
+            sharedBuilder.providerDomains(customDomains);
             return this;
         }
 
         public Builder enableDebug() {
-            config.debug = true;
+            sharedBuilder.debug(true);
             return this;
         }
 
         public Builder enableTesting() {
-            config.testing = true;
+            sharedBuilder.testing(true);
             return this;
         }
 
         public Builder enableDryRun() {
-            config.dryRun = true;
+            sharedBuilder.dryRun(true);
             return this;
         }
 
         public Builder environment(@NonNull String environment) {
-            config.environment = environment;
+            sharedBuilder.environment(environment);
             return this;
         }
 
         @VisibleForTesting
         public Builder disableBackgroundObserver() {
-            config.backgroundObserver = false;
+            this.backgroundObserver = false;
             return this;
         }
 
@@ -247,45 +215,28 @@ final public class TrackingplanConfig {
         }
 
         public Builder sourceAlias(@NonNull String alias) {
-            config.sourceAlias = alias;
+            sharedBuilder.sourceAlias(alias);
             return this;
         }
 
         public Builder tags(@NonNull Map<String, String> tags) {
-            config.tags.clear();
-            config.tags.putAll(tags);
+            sharedBuilder.tags(tags);
             return this;
         }
 
         public Builder tracksEndPoint(@NonNull String tracksEndPoint) {
-            config.tracksEndPoint = endPointInput(tracksEndPoint);
+            sharedBuilder.tracksEndpoint(tracksEndPoint);
             return this;
         }
 
         @NonNull
         public TrackingplanConfig build() {
-
-            TrackingplanConfig result = this.config;
-            reset();
-
-            if (result.isDryRunEnabled() && !result.isDebugEnabled()) {
-                throw new RuntimeException("Cannot enable DryRun mode. DryRun mode must be used along with " +
-                        "Debug mode. Please, enable Debug mode or remove dryRun() call from initialization");
-            }
-
-            return result;
-        }
-
-        private String endPointInput(@NonNull String endPoint) {
-            if (!endPoint.endsWith("/")) {
-                return endPoint + "/";
-            }
-            return endPoint;
-        }
-
-        private void reset() {
-            String tpId = config.getTpId();
-            config = new TrackingplanConfig(tpId);
+            com.trackingplan.shared.TrackingplanConfig sharedConfig = sharedBuilder.build();
+            return new TrackingplanConfig(
+                    sharedConfig,
+                    customContext,
+                    backgroundObserver
+            );
         }
     }
 }

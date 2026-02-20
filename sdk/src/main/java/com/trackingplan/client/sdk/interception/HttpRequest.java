@@ -2,8 +2,10 @@
 package com.trackingplan.client.sdk.interception;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.trackingplan.client.sdk.util.StringUtils;
+import com.trackingplan.shared.adaptive.SamplingResult;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ final public class HttpRequest {
     private long createdTimeMs = 0;
     private String provider = "";
     private String interceptionModule = "";
+    private SamplingResult.Include samplingResult = null;
 
     private HttpRequest() {
         // Empty constructor
@@ -59,6 +62,15 @@ final public class HttpRequest {
     @NonNull
     public String getInterceptionModule() {
         return interceptionModule;
+    }
+
+    @Nullable
+    public SamplingResult.Include getSamplingResult() {
+        return samplingResult;
+    }
+
+    public void setSamplingResult(@Nullable SamplingResult.Include result) {
+        this.samplingResult = result;
     }
 
     /**

@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.BatchSender;
 import com.trackingplan.client.sdk.TrackingplanClient;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.shared.TrackingplanSession;
 import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.TaskRunner;
 

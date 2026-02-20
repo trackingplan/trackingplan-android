@@ -11,8 +11,7 @@ import androidx.startup.Initializer;
 import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.ScreenViewTracker;
 import com.trackingplan.client.sdk.util.ServiceLocator;
-import com.trackingplan.client.sdk.util.SystemTime;
-import com.trackingplan.client.sdk.util.Time;
+import com.trackingplan.shared.ContextProvider;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +26,7 @@ public class TrackingplanInitializer implements Initializer<TrackingplanInstance
 
         logger.debug("Launching Trackingplan service...");
 
-        ServiceLocator.registerSharedInstance(Time.class, new SystemTime());
+        ContextProvider.INSTANCE.init(context.getApplicationContext());
 
         // Initialize TrackingplanInstance
         var instance = new TrackingplanInstance(context.getApplicationContext());

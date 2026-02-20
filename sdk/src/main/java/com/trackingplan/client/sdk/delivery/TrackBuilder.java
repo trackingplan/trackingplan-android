@@ -11,8 +11,9 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.BuildConfig;
 import com.trackingplan.client.sdk.TrackingplanConfig;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
 import com.trackingplan.client.sdk.util.AndroidLog;
+import com.trackingplan.shared.TrackingplanSession;
+import com.trackingplan.shared.adaptive.SamplingResult;
 import com.trackingplan.client.sdk.util.StringUtils;
 
 import org.json.JSONArray;
@@ -94,7 +95,13 @@ final public class TrackBuilder {
             context.put(entry.getKey(), entry.getValue());
         }
 
-        rawTrack.put("sampling_rate", session.getSamplingRate());
+        SamplingResult.Include samplingResult = request.getSamplingResult();
+        if (samplingResult != null) {
+            rawTrack.put("sampling_rate", samplingResult.getEffectiveSampleRate());
+            rawTrack.put("sampling_mode", samplingResult.getSamplingMode().getValue());
+        }
+        // Note: If samplingResult is null, sampling_rate is intentionally omitted to signal
+        // a bug in the SDK. Ingest will log this case and use a default value of 1.
         rawTrack.put("session_id", session.getSessionId());
         rawTrack.put("sdk", "android");
         rawTrack.put("sdk_version", BuildConfig.SDK_VERSION);

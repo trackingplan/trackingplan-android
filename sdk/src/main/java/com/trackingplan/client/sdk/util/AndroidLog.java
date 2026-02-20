@@ -36,6 +36,9 @@ package com.trackingplan.client.sdk.util;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.trackingplan.shared.Logger;
+import com.trackingplan.shared.PlatformLogger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +80,7 @@ public class AndroidLog {
     }
 
     private AndroidLog() {
-        loggers = new ArrayList<>(List.of(new LogcatLogger(LOG_TAG)));
+        loggers = new ArrayList<>(List.of(new PlatformLogger()));
     }
 
     @VisibleForTesting

@@ -4,7 +4,7 @@ package com.trackingplan.client.sdk;
 import androidx.annotation.NonNull;
 
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.shared.TrackingplanSession;
 
 import java.util.List;
 

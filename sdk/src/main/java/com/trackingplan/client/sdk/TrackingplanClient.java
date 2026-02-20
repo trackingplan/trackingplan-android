@@ -8,7 +8,7 @@ import androidx.annotation.NonNull;
 import com.trackingplan.client.sdk.delivery.TrackBuilder;
 import com.trackingplan.client.sdk.exceptions.TrackingplanSendException;
 import com.trackingplan.client.sdk.interception.HttpRequest;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
+import com.trackingplan.shared.TrackingplanSession;
 import com.trackingplan.client.sdk.util.AndroidLog;
 import com.trackingplan.client.sdk.util.StreamUtils;
 
@@ -41,36 +41,30 @@ final public class TrackingplanClient {
         this.builder = new TrackBuilder(config, context);
     }
 
-    public float getSamplingRate() throws IOException, JSONException {
+    /**
+     * Downloads the raw ingest configuration JSON from the config endpoint.
+     * Does not parse the JSON - parsing is done by the caller (IngestConfigCache).
+     *
+     * @return The raw JSON string
+     * @throws IOException if download fails
+     */
+    String downloadIngestConfigRaw() throws IOException {
         URL url = new URL(config.getConfigEndPoint() + "config-" + config.getTpId() + ".json");
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
-        String rawConfig;
         try {
-            rawConfig = readResponse(urlConnection.getInputStream());
+            return readResponse(urlConnection.getInputStream());
         } catch (FileNotFoundException ex) {
-            rawConfig = readResponse(urlConnection.getErrorStream());
+            return readResponse(urlConnection.getErrorStream());
         } finally {
             urlConnection.disconnect();
         }
-
-        return parseSamplingRate(rawConfig);
     }
 
     private String readResponse(InputStream inputStream) throws IOException {
         try (InputStream in = new BufferedInputStream(inputStream)) {
             return StreamUtils.convertInputStreamToString(in);
         }
-    }
-
-    private float parseSamplingRate(String rawConfig) throws JSONException {
-        var jsonObject = new JSONObject(rawConfig);
-        float samplingRate = (float) jsonObject.getDouble("sample_rate");
-        var environmentRates = jsonObject.optJSONObject("environment_rates");
-        if (environmentRates != null) {
-            samplingRate = (float) environmentRates.optDouble(config.getEnvironment(), samplingRate);
-        }
-        return samplingRate;
     }
 
     public int sendTracks(List<HttpRequest> requests, @NonNull final TrackingplanSession session) throws IOException {
