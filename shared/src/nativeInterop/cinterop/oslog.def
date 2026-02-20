@@ -1,0 +1,19 @@
+language = C
+headers = os/log.h
+
+---
+
+#include <os/log.h>
+
+static inline os_log_t tp_os_log_create(const char *subsystem, const char *category) {
+    return os_log_create(subsystem, category);
+}
+
+static inline void tp_os_log(os_log_t log, os_log_type_t type, const char *msg) {
+    os_log_with_type(log, type, "%{public}s", msg);
+}
+
+static inline os_log_type_t tp_os_log_type_debug(void) { return OS_LOG_TYPE_DEBUG; }
+static inline os_log_type_t tp_os_log_type_info(void) { return OS_LOG_TYPE_INFO; }
+static inline os_log_type_t tp_os_log_type_default(void) { return OS_LOG_TYPE_DEFAULT; }
+static inline os_log_type_t tp_os_log_type_error(void) { return OS_LOG_TYPE_ERROR; }

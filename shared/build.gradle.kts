@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
@@ -6,6 +9,7 @@ plugins {
     id("com.android.lint")
     id("maven-publish")
     id("signing")
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 group = rootProject.extra["groupId"] as String
@@ -21,8 +25,9 @@ kotlin {
         compileSdk = 36
         minSdk = 24
 
-        withHostTestBuilder {
-        }
+        // Host tests disabled - org.json unavailable in JVM, use device tests instead
+        // withHostTestBuilder {
+        // }
 
         withDeviceTestBuilder {
             sourceSetTreeName = "test"
@@ -46,6 +51,14 @@ kotlin {
         it.binaries.framework {
             baseName = xcfName
             xcf.add(this)
+            freeCompilerArgs += listOf(
+                "-Xoverride-konan-properties=minVersion.ios=14.0"
+            )
+        }
+        it.compilations.getByName("main") {
+            cinterops {
+                create("oslog")
+            }
         }
     }
 
@@ -58,6 +71,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
                 // Add KMP dependencies here
             }
         }
@@ -88,37 +102,41 @@ kotlin {
             dependencies {
                 // Add iOS-specific dependencies here. This a source set created by Kotlin Gradle
                 // Plugin (KGP) that each specific iOS target (e.g., iosX64) depends on as
-                // part of KMP’s default source set hierarchy. Note that this source set depends
+                // part of KMP's default source set hierarchy. Note that this source set depends
                 // on common by default and will correctly pull the iOS artifacts of any
                 // KMP dependencies declared in commonMain.
             }
         }
+
+    }
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
 }
 
-// Custom task to compress and deploy XCFramework to iOS project
+// Custom task to deploy XCFramework to iOS project
 tasks.register("deployXCFrameworkToiOS") {
     group = "ios deployment"
-    description = "Compresses the TrackingplanShared XCFramework and copies it to the iOS SDK project"
+    description = "Copies the TrackingplanShared XCFramework to the iOS SDK project"
 
     dependsOn("assembleTrackingplanSharedReleaseXCFramework")
 
     doLast {
         val xcframeworkDir = file("build/XCFrameworks/release/TrackingplanShared.xcframework")
         val iosProjectDir = file("../../ios/SDK/Frameworks")
-        val compressedFile = file("${iosProjectDir}/TrackingplanShared.xcframework.zip")
+        val targetXcframeworkDir = file("${iosProjectDir}/TrackingplanShared.xcframework")
 
         // Create Frameworks directory in iOS project if it doesn't exist
         iosProjectDir.mkdirs()
 
-        // Compress XCFramework
-        exec {
-            workingDir(xcframeworkDir.parentFile)
-            commandLine("zip", "-r", compressedFile.absolutePath, xcframeworkDir.name)
+        // Copy unzipped XCFramework to iOS project
+        copy {
+            from(xcframeworkDir)
+            into(targetXcframeworkDir)
         }
-
-        println("✅ TrackingplanShared XCFramework compressed and saved to: ${compressedFile.absolutePath}")
+        println("✅ TrackingplanShared XCFramework copied to: ${targetXcframeworkDir.absolutePath}")
     }
 }
 
@@ -181,5 +199,6 @@ publishing {
 }
 
 signing {
+    isRequired = gradle.taskGraph.hasTask("publishAllPublicationsToSonatypeRepository")
     sign(publishing.publications)
 }
