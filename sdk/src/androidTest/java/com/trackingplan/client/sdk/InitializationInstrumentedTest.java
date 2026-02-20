@@ -10,7 +10,7 @@ import org.junit.Test;
  */
 public class InitializationInstrumentedTest extends BaseInstrumentedTest {
     @Test
-    public void given_SdkWasNeverExecutedBefore_when_SdkStart_then_SdkStarts() {
+    public void given_SdkWasNeverExecutedBefore_when_SdkStart_then_SdkStarts() throws Exception {
         // Given
         // First time execution
 
@@ -24,7 +24,7 @@ public class InitializationInstrumentedTest extends BaseInstrumentedTest {
     }
 
     @Test
-    public void given_SdkAlreadyStarted_when_CallingSdkStartAgain_then_StartIgnored() {
+    public void given_SdkAlreadyStarted_when_CallingSdkStartAgain_then_StartIgnored() throws Exception {
         // Given
         startTrackingplan();
 

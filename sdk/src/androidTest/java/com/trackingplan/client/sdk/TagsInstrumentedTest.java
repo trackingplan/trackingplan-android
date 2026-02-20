@@ -6,6 +6,7 @@ import com.trackingplan.client.sdk.interception.InterceptionContext;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Instrumented test for updateTags functionality.
@@ -15,13 +16,13 @@ import java.util.HashMap;
 public class TagsInstrumentedTest extends BaseInstrumentedTest {
 
     @Test
-    public void given_TrackingplanInitialized_when_UpdateTags_then_TagsAreUpdated() {
+    public void given_TrackingplanInitialized_when_UpdateTags_then_TagsAreUpdated() throws Exception {
         // Given
         startTrackingplan();
 
         // When
         logger.expectExactMessage("Tags updated: {tag2=value2, tag3=value3}");
-        logger.expectMessageStartingWithAndContaining("Batch: [", "\"tag2\": \"value2\"", "\"tag3\": \"value3\"");
+        logger.expectMessageStartingWithAndContaining("Batch: [", List.of("\"tag2\": \"value2\"", "\"tag3\": \"value3\""));
         Trackingplan.updateTags(new HashMap<String, String>() {{
             put("tag2", "value2");
             put("tag3", "value3");
@@ -42,7 +43,7 @@ public class TagsInstrumentedTest extends BaseInstrumentedTest {
     }
 
     @Test
-    public void given_TrackingplanNotInitialized_when_UpdateTags_then_ErrorLogged() {
+    public void given_TrackingplanNotInitialized_when_UpdateTags_then_ErrorLogged() throws Exception {
         // Given
         // Trackingplan is not initialized
 
@@ -57,13 +58,13 @@ public class TagsInstrumentedTest extends BaseInstrumentedTest {
     }
 
     @Test
-    public void given_ExistingTags_when_UpdateTagsWithOverlappingKeys_then_TagsAreMerged() {
+    public void given_ExistingTags_when_UpdateTagsWithOverlappingKeys_then_TagsAreMerged() throws Exception {
         // Given
         startTrackingplan(); // BaseInstrumentedTest starts with tag1=value1
 
         // When
         logger.expectMessageStartsWith("Tags updated: {");
-        logger.expectMessageStartingWithAndContaining("Batch: [", "\"tag1\": \"newvalue1\"", "\"tag2\": \"value2\"");
+        logger.expectMessageStartingWithAndContaining("Batch: [", List.of("\"tag1\": \"newvalue1\"", "\"tag2\": \"value2\""));
         Trackingplan.updateTags(new HashMap<String, String>() {{
             put("tag1", "newvalue1"); // Overwrite existing key
             put("tag2", "value2");    // Add new key

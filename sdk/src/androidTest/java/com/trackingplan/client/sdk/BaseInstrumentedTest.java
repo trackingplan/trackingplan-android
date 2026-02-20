@@ -7,13 +7,13 @@ import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.trackingplan.client.sdk.session.Storage;
-import com.trackingplan.client.sdk.session.TrackingplanSession;
-import com.trackingplan.client.sdk.test.TestLogger;
-import com.trackingplan.client.sdk.test.TestTime;
+import com.trackingplan.shared.TestLogger;
+import com.trackingplan.shared.Storage;
 import com.trackingplan.client.sdk.util.AndroidLog;
-import com.trackingplan.client.sdk.util.ServiceLocator;
-import com.trackingplan.client.sdk.util.Time;
+import com.trackingplan.shared.ContextProvider;
+import com.trackingplan.shared.ServiceLocator;
+import com.trackingplan.shared.TestTimeProvider;
+import com.trackingplan.shared.TrackingplanSession;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -27,8 +27,11 @@ abstract class BaseInstrumentedTest {
 
     private final static String LOG_TAG = "TrackingplanTest";
 
+    protected static final String TEST_TP_ID = "TP000000";
+    protected static final String TEST_ENVIRONMENT = "PRODUCTION";
+
     protected TestLogger logger;
-    protected TestTime fakeTime;
+    protected TestTimeProvider fakeTime;
 
     protected Context context;
 
@@ -36,33 +39,64 @@ abstract class BaseInstrumentedTest {
     public void setUp() {
         logger = new TestLogger(20);
         AndroidLog.getInstance().addLogger(logger);
+        AndroidLog.setLogLevel(AndroidLog.LogLevel.VERBOSE);
 
-        fakeTime = new TestTime();
-        ServiceLocator.registerSharedInstance(Time.class, fakeTime, true);
+        fakeTime = new TestTimeProvider();
+        ServiceLocator.INSTANCE.setTimeProvider(fakeTime);
 
         context = InstrumentationRegistry.getInstrumentation().getTargetContext().getApplicationContext();
+        ContextProvider.INSTANCE.init(context);
 
-        final var storage = new Storage("TP000000", "PRODUCTION", context);
-        storage.clear();
+        try {
+            final var storage = Storage.Companion.create(TEST_TP_ID, TEST_ENVIRONMENT);
+            storage.clear();
+            // Clear storage for other test configurations used in IngestConfigCacheInstrumentedTest
+            final var storage2 = Storage.Companion.create("TP873633", "PRODUCTION");
+            storage2.clear();
+            final var storage3 = Storage.Companion.create("TP873633", "preproduction");
+            storage3.clear();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create storage", e);
+        }
     }
 
     @After
     public void tearDown() {
         stopTrackingplan();
         AndroidLog.getInstance().removeLogger(logger);
+        ServiceLocator.INSTANCE.reset();
         // Do not clear storage for inspection when debugging
     }
 
     protected void startTrackingplan() {
-        startTrackingplan("TP000000", "PRODUCTION");
+        startTrackingplan(TEST_TP_ID, TEST_ENVIRONMENT, true);
+    }
+
+    protected void startTrackingplan(
+            @NonNull final String tpId,
+            @NonNull final String environment
+    ) {
+        startTrackingplan(tpId, environment, true);
     }
 
     // Helpers
     protected void startTrackingplan(
             @NonNull final String tpId,
-            @NonNull final String environment
+            @NonNull final String environment,
+            final boolean fakeSampling
     ) {
         Log.i(LOG_TAG, "start trackingplan");
+
+        // Pre-populate cache before initialize to avoid network downloads in tests
+        if (fakeSampling) {
+            try {
+                var storage = Storage.Companion.create(tpId, environment);
+                storage.getIngestConfigCache().save("{\"sample_rate\": 1}");
+                storage.saveTrackingEnabled(true);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to pre-populate cache", e);
+            }
+        }
 
         var instance = TrackingplanInstance.getInstance();
 
@@ -76,6 +110,7 @@ abstract class BaseInstrumentedTest {
                 .tags(new HashMap<>() {{
                     put("tag1", "value1");
                 }})
+//               .tracksEndPoint("http://192.168.0.24:9090")
                 .enableDebug()
                 .dryRun()
                 .start(context);
@@ -84,7 +119,7 @@ abstract class BaseInstrumentedTest {
             if (instance.waitForRunSync()) {
                 Assert.fail("Wait for Trackingplan start timed out");
             }
-            Assert.assertNotEquals(TrackingplanSession.EMPTY, instance.getSession());
+            Assert.assertNotEquals(TrackingplanSession.Companion.getEMPTY(), instance.getSession());
         } else {
             Assert.fail("Trackingplan service not registered");
         }
@@ -112,9 +147,8 @@ abstract class BaseInstrumentedTest {
         InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
             final var initializer = new TrackingplanInitializer();
             initializer.create(context);
-            TrackingplanInstance.getInstance().setFakeSamplingEnabled(true);
-            Assert.assertFalse(TrackingplanInstance.getInstance().getSession().isTrackingEnabled());
-            Assert.assertEquals(TrackingplanSession.EMPTY, TrackingplanInstance.getInstance().getSession());
+            Assert.assertFalse(TrackingplanInstance.getInstance().getSession().getTrackingEnabled());
+            Assert.assertEquals(TrackingplanSession.Companion.getEMPTY(), TrackingplanInstance.getInstance().getSession());
         });
     }
 }
