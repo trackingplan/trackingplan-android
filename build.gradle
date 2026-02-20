@@ -9,7 +9,7 @@ plugins {
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "2.2.0-SNAPSHOT"
+    TrackingplanVersion = "3.0.0"
     TrackingplanAdapterVersion = "2.1.2"
 }
 
@@ -22,8 +22,11 @@ tasks.register('cleanBuildPublishLocal', GradleBuild) {
 }
 
 tasks.register('buildPublishLocal', GradleBuild) {
+    tasks = ['build', 'publishLocal']
+}
+
+tasks.register('publishLocal', GradleBuild) {
     tasks = [
-            'build',
             'adapter:publishToMavenLocal',
             'sdk:publishToMavenLocal',
             'junit-tools:publishToMavenLocal',
@@ -40,14 +43,24 @@ tasks.register('cleanBuildPublishSonatype', GradleBuild) {
 }
 
 tasks.register('buildPublishSonatype', GradleBuild) {
+    tasks = ['build', 'publishSonatype']
+}
+
+tasks.register('publishSdkSonatype', GradleBuild) {
     tasks = [
-            'build',
-            'adapter:publishAllPublicationsToSonatypeRepository',
             'sdk:publishAllPublicationsToSonatypeRepository',
             'junit-tools:publishAllPublicationsToSonatypeRepository',
             'shared:publishAndroidPublicationToSonatypeRepository',
             'shared:publishKotlinMultiplatformPublicationToSonatypeRepository'
     ]
+}
+
+tasks.register('publishAdapterSonatype', GradleBuild) {
+    tasks = ['adapter:publishAllPublicationsToSonatypeRepository']
+}
+
+tasks.register('publishSonatype', GradleBuild) {
+    tasks = ['publishSdkSonatype', 'publishAdapterSonatype']
 }
 
 // Load local.properties to ext

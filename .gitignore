@@ -99,9 +99,6 @@ examples/**/.idea/
 # General
 .DS_Store
 
-# LLM agents
-.claude
-
 # Kotlin build directory (Kotlin 2.0+)
 .kotlin/
 
