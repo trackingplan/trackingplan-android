@@ -44,7 +44,7 @@ Select the `project-level build.gradle.kts` file and add the Trackingplan plugin
 ```kotlin
 plugins {
     // ...
-    id("com.trackingplan.client") version "2.1.2" apply false
+    id("com.trackingplan.client") version "2.2.0" apply false
     // ...
 }
 ```
@@ -76,7 +76,7 @@ Select the `project-level build.gradle` file and add the Trackingplan plugin to 
 ```gradle
 plugins {
     // ...
-    id 'com.trackingplan.client' version '2.1.2' apply false
+    id 'com.trackingplan.client' version '2.2.0' apply false
     // ...
 }
 ```
@@ -115,7 +115,7 @@ buildscript {
     }
     dependencies {
         // ...
-        classpath 'com.trackingplan.client:adapter:2.1.2'
+        classpath 'com.trackingplan.client:adapter:2.2.0'
     }
 }
 ```
@@ -286,7 +286,7 @@ allprojects {
 }
 ```
 
-Remember to change the version of Trackingplan in your dependencies to  `1.2.0-SNAPSHOT`.
+Remember to change the version of Trackingplan in your dependencies to  `3.0.1-SNAPSHOT`.
 
 ## Troubleshooting
 

@@ -10,7 +10,7 @@ plugins {
 ext {
     groupId = 'com.trackingplan.client'
     TrackingplanVersion = "3.0.0"
-    TrackingplanAdapterVersion = "2.1.2"
+    TrackingplanAdapterVersion = "2.2.0"
 }
 
 tasks.register('clean', Delete) {

@@ -1,7 +1,7 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.client.adapter;
 
-import com.android.build.gradle.AppExtension;
+import com.android.build.api.dsl.ApplicationExtension;
 import com.trackingplan.client.adapter.core.AdapterFlagState;
 import com.trackingplan.client.adapter.util.GradleLogger;
 import com.trackingplan.client.adapter.util.SimpleAGPVersion;
@@ -54,7 +54,7 @@ public class TrackingplanPlugin implements Plugin<Project> {
             });
         }
 
-        AppExtension androidExt = project.getExtensions().getByType(AppExtension.class);
+        ApplicationExtension androidExt = project.getExtensions().getByType(ApplicationExtension.class);
         registerExtension(androidExt);
 
         var adapterFlagState = new AdapterFlagState(project);
@@ -87,7 +87,7 @@ public class TrackingplanPlugin implements Plugin<Project> {
         TrackingplanClassVisitorFactory.registerForProject(project, adapterFlagState);
     }
 
-    private void registerExtension(AppExtension androidExt) {
+    private void registerExtension(ApplicationExtension androidExt) {
         androidExt.getBuildTypes().all(buildType -> buildType.getExtensions().add(TP_EXTENSION_NAME, TrackingplanExtension.class));
     }
 

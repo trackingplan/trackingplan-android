@@ -2,9 +2,8 @@
 package com.trackingplan.client.adapter.core;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.dsl.ApplicationExtension;
 import com.android.build.api.dsl.BuildType;
-import com.android.build.gradle.AppExtension;
-import com.android.build.gradle.api.ApplicationVariant;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableMap;
 import com.trackingplan.client.adapter.TrackingplanExtension;
@@ -13,8 +12,6 @@ import com.trackingplan.client.adapter.TrackingplanPlugin;
 import org.gradle.api.Project;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,42 +19,26 @@ final public class AdapterFlagState implements Serializable {
 
     private static final boolean ADAPTER_ENABLED_DEFAULT = true;
 
-    private final Map<String, Optional<Boolean>> parsedProjectProperties;
+    private final ImmutableMap<String, Optional<Boolean>> parsedProjectProperties;
 
-    private final transient AppExtension androidExt;
-
-    private final Map<String, Boolean> variantToInstrumentationEnabledMap = new HashMap<>();
+    private final transient ApplicationExtension androidExt;
 
     public AdapterFlagState(Project project) {
-        androidExt = project.getExtensions().getByType(AppExtension.class);
+        androidExt = project.getExtensions().getByType(ApplicationExtension.class);
         parsedProjectProperties = ImmutableMap.of(
                 TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY, readProjectPropertyValue(project, TrackingplanPlugin.TP_ADAPTER_ENABLED_KEY)
         );
-        androidExt.getApplicationVariants().all(variant -> updateInstrumentationEnabledFor(androidExt, variant));
     }
 
     public Optional<Boolean> getProjectPropertyValue(@NonNull String propertyKey) {
         return parsedProjectProperties.getOrDefault(propertyKey, Optional.empty());
     }
 
-    public boolean isEnabledFor(String variant) {
-        return this.variantToInstrumentationEnabledMap.getOrDefault(variant, ADAPTER_ENABLED_DEFAULT);
-    }
-
     public boolean isEnabledFor(String variant, String buildType) {
         return this.instrumentationEnabledFor(androidExt, variant, buildType);
     }
 
-    public Map<String, Boolean> getVariantToInstrumentationEnabledMap() {
-        return this.variantToInstrumentationEnabledMap;
-    }
-
-    private void updateInstrumentationEnabledFor(AppExtension extension, ApplicationVariant applicationVariant) {
-        String variant = applicationVariant.getName();
-        this.variantToInstrumentationEnabledMap.put(variant, this.instrumentationEnabledFor(extension, variant, applicationVariant.getBuildType().getName()));
-    }
-
-    private boolean instrumentationEnabledFor(AppExtension extension, String variant, String buildType) {
+    private boolean instrumentationEnabledFor(ApplicationExtension extension, String variant, String buildType) {
 
         var logger = TrackingplanPlugin.getLogger();
 
@@ -102,9 +83,15 @@ final public class AdapterFlagState implements Serializable {
         return parsedPropVal;
     }
 
-    private static Optional<Boolean> getBuildTypeExtensionValue(AppExtension extension, String buildType) {
-        BuildType dslBuildType = extension.getBuildTypes().getByName(buildType);
-        TrackingplanExtension buildTypeExt = dslBuildType.getExtensions().getByType(TrackingplanExtension.class);
+    private static Optional<Boolean> getBuildTypeExtensionValue(ApplicationExtension extension, String buildType) {
+        BuildType dslBuildType = extension.getBuildTypes().findByName(buildType);
+        if (dslBuildType == null) {
+            return Optional.empty();
+        }
+        TrackingplanExtension buildTypeExt = dslBuildType.getExtensions().findByType(TrackingplanExtension.class);
+        if (buildTypeExt == null) {
+            return Optional.empty();
+        }
         return buildTypeExt.getEnabled();
     }
 
