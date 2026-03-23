@@ -197,6 +197,51 @@ class UrlMatcherTest {
     }
     
     @Test
+    fun testAdjustProviderMatching() {
+        val providers = mapOf(
+            "regex:(analytics|consent|app|gdpr|subscription|ssrv)\\.adjust\\.(com|io)" to "adjust"
+        )
+
+        // iOS default
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://analytics.adjust.com/session"))
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://analytics.adjust.com/event"))
+        // iOS with ATT consent
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://consent.adjust.com/event"))
+        // Android default
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://app.adjust.com/session"))
+        // GDPR erasure (both platforms)
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://gdpr.adjust.com/gdpr_forget_device"))
+        // Subscription verification (both platforms)
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://subscription.adjust.com/verify"))
+        // Purchase verification (both platforms)
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://ssrv.adjust.com/verify"))
+        // .io fallback
+        assertEquals("adjust", UrlMatcher.matchProvider(providers, "https://analytics.adjust.io/session"))
+        // Should NOT match unrelated domains
+        assertNull(UrlMatcher.matchProvider(providers, "https://readjust.com/foo"))
+    }
+
+    @Test
+    fun testFloodlightProviderMatching() {
+        val providers = mapOf(
+            "regex:(/activity|/fls).*src=" to "floodlight"
+        )
+
+        // Standard floodlight activity pixel (ad.doubleclick.net)
+        assertEquals("floodlight", UrlMatcher.matchProvider(providers, "https://ad.doubleclick.net/activity;src=4593563;type=eci_e0;cat=hpg_h0"))
+        // Tracking delivery format (td.doubleclick.net)
+        assertEquals("floodlight", UrlMatcher.matchProvider(providers, "https://td.doubleclick.net/td/fls/rul/activityi;src=4593563;type=audie0;cat=allpages"))
+        // Account ID subdomain format ([id].fls.doubleclick.net)
+        assertEquals("floodlight", UrlMatcher.matchProvider(providers, "https://4593563.fls.doubleclick.net/activityi;src=4593563;type=audie0;cat=allpages"))
+        // POST format
+        assertEquals("floodlight", UrlMatcher.matchProvider(providers, "https://ad.doubleclick.net/activity;src=15047120;type=conv0;cat=purch0"))
+        // Should NOT match without src= parameter
+        assertNull(UrlMatcher.matchProvider(providers, "https://ad.doubleclick.net/activity;type=eci_e0;cat=hpg_h0"))
+        // Should NOT match unrelated paths
+        assertNull(UrlMatcher.matchProvider(providers, "https://ad.doubleclick.net/something;src=123"))
+    }
+
+    @Test
     fun testFailedPatternCaching() {
         val providers = mapOf(
             "regex:[invalid" to "invalid",

@@ -774,6 +774,7 @@ final public class TrackingplanInstance {
      */
     private @NotNull Map<String, String> makeDefaultProviders() {
         return new HashMap<>() {{
+            put("regex:(analytics|consent|app|gdpr|subscription|ssrv)\\.adjust\\.(com|io)", "adjust");
             put("regex:api[0-9]*\\.amplitude\\.com", "amplitude");
             put("bat.bing.com", "bing");
             put("regex:api[0-9]*\\.branch\\.io/v[0-9]+", "branch");
@@ -783,6 +784,7 @@ final public class TrackingplanInstance {
             put("facebook.com/tr/", "facebook");
             put("graph.facebook.com/*/*/activities", "facebookgraph");
             put("regex:ep[0-9]+\\.facebook\\.com/.*/activities", "facebookgraph");
+            put("regex:(/activity|/fls).*src=", "floodlight");
             put("api.intercom.io", "intercom");
             put("kissmetrics.com", "kissmetrics");
             put("trk.kissmetrics.io", "kissmetrics");
