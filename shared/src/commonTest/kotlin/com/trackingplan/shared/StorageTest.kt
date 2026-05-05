@@ -1,6 +1,8 @@
 // Copyright (c) 2021 Trackingplan
 package com.trackingplan.shared
 
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.test.*
 
 class StorageTest : BaseTest() {
@@ -80,7 +82,10 @@ class StorageTest : BaseTest() {
             trackingEnabled = true,
             samplingOptions = SamplingOptions(
                 useAdaptiveSampling = true,
-                adaptiveSamplingPatterns = listOf("""{"provider":"amplitude","sample_rate":5}""")
+                adaptiveSamplingPatterns = listOf(buildJsonObject {
+                    put("provider", "amplitude")
+                    put("sample_rate", 5)
+                })
             )
         )
 

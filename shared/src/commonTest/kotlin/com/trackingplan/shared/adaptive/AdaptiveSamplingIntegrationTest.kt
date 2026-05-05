@@ -4,6 +4,12 @@ package com.trackingplan.shared.adaptive
 import com.trackingplan.shared.BaseTest
 import com.trackingplan.shared.SamplingOptions
 import com.trackingplan.shared.TrackingplanSession
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -26,13 +32,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -58,12 +64,12 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "hotjar",
                     "sample_rate": 10
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -86,12 +92,12 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -119,20 +125,20 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start", "plan": "premium"},
                     "sample_rate": 1
                 }
-                """.trimIndent(),
-                """
+                """.trimIndent()),
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -169,7 +175,7 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "mixpanel",
                     "match": {
@@ -198,7 +204,7 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
                     },
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -224,13 +230,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "googleanalytics",
                     "match": {"en": "Scroll"},
                     "sample_rate": 1
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -252,13 +258,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "segment",
                     "match": {"api_key": "test_key_123"},
                     "sample_rate": 2
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -280,7 +286,7 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "segment",
                     "match": {
@@ -289,7 +295,7 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
                     },
                     "sample_rate": 1
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -312,16 +318,17 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
 
     @Test
     fun testNoExceptionWithAllMalformedPatterns() {
-        // All patterns are invalid JSON - should not throw
+        // Every element is a JsonElement the SDK must reject during lazy parse without
+        // throwing — critical for iOS where uncaught Kotlin exceptions crash the host app.
         val session = createSession(
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """{invalid json""",
-                """not json at all""",
-                """{""",
-                """}""",
-                ""
+                buildJsonObject { put("missing_provider", true) },
+                JsonPrimitive("not even an object"),
+                JsonNull,
+                pat("[1, 2, 3]"),
+                buildJsonObject { put("provider", JsonPrimitive(42)) }
             )
         )
 
@@ -331,7 +338,6 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             payload = """{"event_type":"session_start"}"""
         )
 
-        // Should not throw - returns result with no pattern matched
         val result = session.evaluateSamplingDecision(request)
         assertIs<SamplingResult.Include>(result)
         assertEquals(SamplingMode.SESSION_SAMPLED_NO_PATTERN, result.samplingMode)
@@ -343,13 +349,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -370,13 +376,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"@TP_ENDPOINT_PATH@CONTAINS": "/track"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -397,13 +403,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -443,13 +449,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -482,13 +488,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"@TP_ENDPOINT_PATH@CONTAINS": "/track"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -512,22 +518,25 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
 
     @Test
     fun testMalformedPatternIsSkipped() {
+        // First element lacks `provider` (the SDK must skip it). Second is a valid pattern
+        // that must still match.
         val session = createSession(
             sampleRate = 10,
             trackingEnabled = true,
             patterns = listOf(
-                """{invalid json""",  // Malformed - should be skipped
-                """
-                {
-                    "provider": "amplitude",
-                    "match": {"event_type": "session_start"},
-                    "sample_rate": 5
-                }
-                """.trimIndent()
+                buildJsonObject { put("missing_provider", true) },
+                pat(
+                    """
+                    {
+                        "provider": "amplitude",
+                        "match": {"event_type": "session_start"},
+                        "sample_rate": 5
+                    }
+                    """.trimIndent()
+                )
             )
         )
 
-        // Should still match with the valid pattern
         val request = Request(
             provider = "amplitude",
             endpoint = "https://api.amplitude.com/batch",
@@ -549,13 +558,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 0,  // Tracking completely disabled
             trackingEnabled = false,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "critical_event"},
                     "sample_rate": 1
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -583,13 +592,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             trackingEnabled = true,
             useAdaptiveSampling = false,
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "session_start"},
                     "sample_rate": 5
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -617,13 +626,13 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
             sampleRate = 10,
             trackingEnabled = false,  // Session not sampled
             patterns = listOf(
-                """
+                pat("""
                 {
                     "provider": "amplitude",
                     "match": {"event_type": "critical_event"},
                     "sample_rate": 2
                 }
-                """.trimIndent()
+                """.trimIndent())
             )
         )
 
@@ -659,11 +668,15 @@ class AdaptiveSamplingIntegrationTest : BaseTest() {
     // Helper Functions
     // =============================================================
 
+    private val testJson = Json { isLenient = true }
+
+    private fun pat(json: String): JsonElement = testJson.parseToJsonElement(json)
+
     private fun createSession(
         sampleRate: Int = 10,
         trackingEnabled: Boolean = true,
         useAdaptiveSampling: Boolean = true,
-        patterns: List<String> = emptyList()
+        patterns: List<JsonElement> = emptyList()
     ): TrackingplanSession {
         return TrackingplanSession.newSession(
             samplingRate = sampleRate,

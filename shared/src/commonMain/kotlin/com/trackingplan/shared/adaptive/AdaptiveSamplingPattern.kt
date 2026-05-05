@@ -11,7 +11,11 @@ import kotlinx.serialization.Serializable
  * based on their characteristics (provider, event type, properties, etc.).
  *
  * @property provider The analytics provider this rule applies to (e.g., "amplitude", "mixpanel")
- * @property match Optional matching conditions. If null, rule applies to all requests for this provider
+ * @property match Optional matching conditions. **A null match is a load-bearing catch-all:**
+ * AdaptiveSamplingMatcher applies the pattern to every request from this provider without
+ * evaluating any condition. AdaptiveSamplingPatternParser distinguishes "match field absent /
+ * JsonNull" (legitimate catch-all) from "match field present with a non-object shape" (drops
+ * the whole pattern) so an unrecognised wire-format value can never silently widen a rule.
  * @property sampleRate The sampling rate to apply if this rule matches (1/X probability, where 1 = 100%, 2 = 50%, etc.)
  */
 @Serializable

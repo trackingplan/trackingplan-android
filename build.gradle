@@ -9,7 +9,7 @@ plugins {
 
 ext {
     groupId = 'com.trackingplan.client'
-    TrackingplanVersion = "3.0.1"
+    TrackingplanVersion = "3.1.0"
     TrackingplanAdapterVersion = "2.2.0"
 }
 

@@ -60,11 +60,11 @@ plugins {
 }
 ```
 
-- Add `implementation("com.trackingplan.client:sdk:3.0.1")` to the dependencies section:
+- Add `implementation("com.trackingplan.client:sdk:3.1.0")` to the dependencies section:
 ```kotlin
 dependencies {
     // ...
-    implementation("com.trackingplan.client:sdk:3.0.1")
+    implementation("com.trackingplan.client:sdk:3.1.0")
     // ...
 }
 ```
@@ -92,11 +92,11 @@ plugins {
 }
 ```
 
-- Add `implementation 'com.trackingplan.client:sdk:3.0.1'` to the dependencies section:
+- Add `implementation 'com.trackingplan.client:sdk:3.1.0'` to the dependencies section:
 ```gradle
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:3.0.1'
+    implementation 'com.trackingplan.client:sdk:3.1.0'
     // ...
 }
 ```
@@ -127,7 +127,7 @@ apply plugin: 'com.trackingplan.client'
 
 dependencies {
     // ...
-    implementation 'com.trackingplan.client:sdk:3.0.1'
+    implementation 'com.trackingplan.client:sdk:3.1.0'
     // ...
 }
 ```
@@ -286,7 +286,7 @@ allprojects {
 }
 ```
 
-Remember to change the version of Trackingplan in your dependencies to  `3.0.1-SNAPSHOT`.
+Remember to change the version of Trackingplan in your dependencies to  `3.0.2-SNAPSHOT`.
 
 ## Troubleshooting
 

@@ -63,7 +63,10 @@ class TrackingplanIngestConfigTest {
                 },
                 "options": {
                     "useAdaptiveSampling": true,
-                    "adaptiveSamplingPatterns": ["pattern1", "pattern2"]
+                    "adaptiveSamplingPatterns": [
+                        {"provider": "amplitude", "match": {"event_type": "purchase"}, "sample_rate": 1},
+                        {"provider": "mixpanel", "match": {"event": "view"}, "sample_rate": 2}
+                    ]
                 }
             }
         """.trimIndent()

@@ -139,7 +139,9 @@ class IngestConfigCacheTest : BaseTest() {
                 "environment_rates": {"PRODUCTION": 1, "STAGING": 10},
                 "options": {
                     "useAdaptiveSampling": true,
-                    "adaptiveSamplingPatterns": ["pattern1"]
+                    "adaptiveSamplingPatterns": [
+                        {"provider": "amplitude", "match": {"event_type": "page_view"}, "sample_rate": 5}
+                    ]
                 }
             }
         """.trimIndent()

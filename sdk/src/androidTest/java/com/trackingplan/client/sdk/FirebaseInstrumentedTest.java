@@ -30,7 +30,7 @@ public class FirebaseInstrumentedTest extends BaseInstrumentedTest {
                 "sample_rate": 100,
                 "options": {
                     "useAdaptiveSampling": true,
-                    "adaptiveSamplingPatterns": ["{\\"provider\\":\\"lib-firebase\\",\\"match\\":{\\"and\\":[{\\"method\\":\\"logEvent\\"},{\\"name\\":\\"purchase\\"}]},\\"sample_rate\\":1}"]
+                    "adaptiveSamplingPatterns": [{"provider": "lib-firebase", "match": {"and": [{"method": "logEvent"}, {"name": "purchase"}]}, "sample_rate": 1}]
                 }
             }
             """;
