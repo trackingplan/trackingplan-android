@@ -14,6 +14,9 @@ plugins {
 
 group = rootProject.extra["groupId"] as String
 version = rootProject.extra["TrackingplanVersion"] as String
+val enableJvmAdaptiveSamplingIntegration = providers
+    .gradleProperty("enableJvmAdaptiveSamplingIntegration")
+    .orNull == "true"
 
 kotlin {
 
@@ -34,6 +37,10 @@ kotlin {
         }.configure {
             instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
+    }
+
+    if (enableJvmAdaptiveSamplingIntegration) {
+        jvm()
     }
 
     // For iOS targets, this is also where you should
@@ -87,6 +94,19 @@ kotlin {
                 // Add Android-specific dependencies here. Note that this source set depends on
                 // commonMain by default and will correctly pull the Android artifacts of any KMP
                 // dependencies declared in commonMain.
+            }
+        }
+
+        if (enableJvmAdaptiveSamplingIntegration) {
+            jvmMain {
+                dependencies {
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.21")
+                }
+            }
+
+            jvmTest {
+                resources.srcDir("../../../ingest/tests/integration/adaptive_sampling/fixtures")
+                resources.srcDir("build/generated/adaptiveSamplingIntegration")
             }
         }
 
