@@ -157,6 +157,16 @@ tasks.register("deployXCFrameworkToiOS") {
             into(targetXcframeworkDir)
         }
         println("✅ TrackingplanShared XCFramework copied to: ${targetXcframeworkDir.absolutePath}")
+
+        // Strip absolute build paths from dSYM Relocations YAMLs (leaks dev username/path).
+        val binaryPathRegex = Regex("^binary-path:.*$", RegexOption.MULTILINE)
+        targetXcframeworkDir.walkTopDown()
+            .filter { it.isFile && it.extension == "yml" && it.absolutePath.contains("/Relocations/") }
+            .forEach { yml ->
+                val name = yml.nameWithoutExtension
+                val replacement = "binary-path:     '${name}.framework/${name}'"
+                yml.writeText(yml.readText().replace(binaryPathRegex, replacement))
+            }
     }
 }
 
