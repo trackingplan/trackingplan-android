@@ -69,14 +69,24 @@ final class InstrHttpOutputStream extends OutputStream {
     @Override
     public void close() throws IOException {
         try {
-            if (bytesWritten > 0) {
-                requestBuilder.setRequestPayload(teeStream.toByteArray());
-                requestBuilder.setRequestPayloadNumBytes(bytesWritten);
-            }
+            publishPayload();
             outputStream.close();
         } catch (IOException ex) {
             throw instrConn.finishInterceptionWithError(ex);
         }
+    }
+
+    /**
+     * Copies the captured payload into the request builder. Must run on the app's network
+     * thread before the builder snapshot is posted to the Trackingplan thread; otherwise the
+     * payload set by a later close() races with the snapshot and the track loses its body.
+     */
+    void publishPayload() {
+        if (bytesWritten == 0) {
+            return;
+        }
+        requestBuilder.setRequestPayload(teeStream.toByteArray());
+        requestBuilder.setRequestPayloadNumBytes(bytesWritten);
     }
 
     @Override

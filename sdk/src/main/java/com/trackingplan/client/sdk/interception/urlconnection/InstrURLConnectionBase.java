@@ -60,6 +60,7 @@ final class InstrURLConnectionBase {
 
     private final HttpURLConnection httpUrlConnection;
     private final InstrumentRequestBuilder requestBuilder;
+    private InstrHttpOutputStream instrOutputStream;
     private boolean interceptionFinished = false;
 
     public InstrURLConnectionBase(HttpURLConnection connection, InstrumentRequestBuilder builder) {
@@ -127,7 +128,8 @@ final class InstrURLConnectionBase {
 
     public OutputStream getOutputStream() throws IOException {
         try {
-            return new InstrHttpOutputStream(httpUrlConnection.getOutputStream(), this, requestBuilder);
+            instrOutputStream = new InstrHttpOutputStream(httpUrlConnection.getOutputStream(), this, requestBuilder);
+            return instrOutputStream;
         } catch (IOException ex) {
             throw finishInterceptionWithError(ex);
         }
@@ -366,6 +368,14 @@ final class InstrURLConnectionBase {
     private void finishInterception() {
         if (interceptionFinished) return;
         interceptionFinished = true;
+        // Some callers (e.g. Adjust) read the response before closing the output stream, so the
+        // payload captured so far must be published before build() snapshots the request.
+        // Bytes written after this point (between reading the response and close()) are not in
+        // the snapshot, but HTTP requires the request body to be fully sent before a response
+        // exists, so the body captured here is already complete for any conformant caller.
+        if (instrOutputStream != null) {
+            instrOutputStream.publishPayload();
+        }
         updateRequestMethod();
         requestBuilder.build();
     }
